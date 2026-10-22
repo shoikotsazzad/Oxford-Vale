@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Design tokens. Replace with values from the project CLAUDE.md Design section. */
+@theme {
+  --color-ink: #111827; /* main text, dark surfaces */
+  --color-muted: #6b7280; /* secondary text */
+  --color-line: #e5e7eb; /* borders */
+  --color-surface: #f8fafc; /* alt section background */
+  --color-accent: #0f766e; /* the one accent color */
+  --color-accent-hover: #115e59;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
