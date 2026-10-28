@@ -104,7 +104,7 @@ All money is **whole taka integers**. All timestamps via `{ timestamps: true }`.
 OrderItem is embedded rather than its own collection: it is a price snapshot that is always read with its order. If you want it as a separate collection, say so.
 
 **Coupon**: code (unique, uppercase), type `percent|fixed`, value, maxDiscount? (percent only), minOrder, startsAt?, expiresAt, usageLimit, usedCount, perCustomerLimit?, isActive.
-**DeliveryZone**: name, fee, etaMinDays, etaMaxDays, match rules {divisions[], districts[], areas[]} (most specific match wins), sortOrder, isActive. Seed zones: Dhaka City · Dhaka (outside city) · Chattogram · Rest of Bangladesh.
+**DeliveryZone**: name, fee, etaMinDays, etaMaxDays, match rules {divisions[], districts[], areas[]} (most specific match wins), sortOrder, isActive. Seed zones: Dhaka City ৳80 / 1–2 days · Dhaka (outside city) ৳120 / 2–3 days · Chattogram ৳130 / 2–4 days · Rest of Bangladesh ৳150 / 3–5 days. Seed settings: freeDeliveryThreshold ৳10,000, abandonedAfterMinutes 60.
 **Setting** (single doc, cached with a tag): storeName, tagline, legal {name, tradeLicence, tin, bin}, contact {phone, whatsapp, email, supportEmail, ordersEmail}, address, hours[], socials, announcementBar {text, link, active}, hero {eyebrow, title, subtitle, image, ctas}, newSeasonBanner, freeDeliveryThreshold, abandonedAfterMinutes, lowStockThreshold, payments {cod, sslcommerz, bkash {enabled, number}, nagad {enabled, number}}, bank {accountName, accountNo, bankBranch}, invoiceFooter.
 **AuditLog**: actor, actorName, actorRole, action (`order.status.update`, `product.archive`…), entity {type, id, label}, changes (before/after of changed fields), ip, at.
 
@@ -115,7 +115,7 @@ The starter `Lead` model (contact-form lead) is replaced by the new `Lead` + `Co
 - **Pricing** (`server/services/pricing.ts`, pure and unit-tested): unitPrice = variant.priceOverride ?? product.salePrice ?? product.price → subtotal → coupon discount (percent rounded down to whole taka, capped by maxDiscount; fixed ≤ subtotal) → delivery fee from zone, **free when subtotal − discount ≥ freeDeliveryThreshold** → total. The client never sends prices.
 - **Stock**: on order, each variant is decremented atomically with `{stock: {$gte: qty}}`; if any line fails, earlier lines roll back and the customer sees which item ran out. Restored once (`stockRestoredAt`) on cancel; admin chooses "restock" when marking Returned. Works on standalone local Mongo (no replica set needed).
 - **Coupons**: validated (active, dates, minOrder, usage limit, per-customer limit), then `usedCount` is incremented with a conditional update at order time.
-- **Lead capture**: first add-to-cart opens a short modal (name, phone `01XXXXXXXXX`, email) → Lead `cart`. Logged-in customers are prefilled and skip it. Checkout updates the same lead. Order placed → `converted`. Sweep marks `cart` leads idle > `abandonedAfterMinutes` (default 60) as `abandoned` and emails the admin one digest.
+- **Lead capture**: first add-to-cart opens a short modal (name, phone `01XXXXXXXXX`, email) → Lead `cart`. The modal can be skipped ("Skip, I'll add details at checkout"): the item is still added and the lead is created at checkout instead (source `checkout`). Skipping is remembered on the cart, so the modal does not reappear. Logged-in customers are prefilled and skip it. Checkout updates the same lead. Order placed → `converted`. Sweep marks `cart` leads idle > `abandonedAfterMinutes` (default 60) as `abandoned` and emails the admin one digest.
 - **Payments**:
   - COD: order `pending` / `unpaid`.
   - bKash/Nagad manual: customer sees the merchant number + amount, submits Trx ID + sender number. It stays `unpaid` with "awaiting verification" until admin verifies → `paid`, order `confirmed`.
@@ -169,8 +169,8 @@ No logo file is needed: the wordmark is set in Playfair Display, and the favicon
 1. Setup + seed → 2. storefront browsing → 3. cart + lead capture → 4. checkout + orders → 5. admin panel → 6. notifications → 7. polish.
 After each step: run the app, report what works / what is mocked, update `PROGRESS.md` and the project CLAUDE.md Status.
 
-## 9. Decisions needed
-1. **Lead modal on first add-to-cart**: block until filled (brief, maximum capture) or allow "skip, ask at checkout" (less friction)? Default: required.
-2. **Seed size**: all 150 products (default) or ~20 as the brief says?
-3. **Delivery zone defaults** (sample values, editable in admin): Dhaka City ৳80 / 1–2 days · Dhaka outside city ৳120 / 2–3 days · Chattogram ৳130 / 2–4 days · Rest of Bangladesh ৳150 / 3–5 days · free delivery from ৳10,000 · abandoned after 60 min. OK?
-4. **Placeholder phone numbers** `01700-00000x` have a real Grameenphone format; on a public demo the WhatsApp/call links could reach a real person. Switch them to the unassigned `01000-00000x` range? (Mock SMS only logs, so SMS is safe either way.)
+## 9. Decisions (resolved 2026-10-22)
+1. **Lead modal**: skippable. Skipping defers lead capture to checkout (see §4).
+2. **Seed size**: all 150 products (`--limit 20` stays available).
+3. **Delivery zones**: defaults accepted as listed in §3 (editable in admin).
+4. **Placeholder phones**: keep `01700-00000x`.

@@ -1,14 +1,22 @@
 @import "tailwindcss";
 
-/* Design tokens. Replace with values from the project CLAUDE.md Design section. */
+/* Oxford Vale design tokens (project CLAUDE.md → Design). */
 @theme {
-  --color-ink: #111827; /* main text, dark surfaces */
-  --color-muted: #6b7280; /* secondary text */
-  --color-line: #e5e7eb; /* borders */
-  --color-surface: #f8fafc; /* alt section background */
-  --color-accent: #0f766e; /* the one accent color */
-  --color-accent-hover: #115e59;
-  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --color-paper: #f7f5f0; /* page background */
+  --color-ink: #111111; /* text, primary buttons */
+  --color-charcoal: #1e1e1e; /* dark panels */
+  --color-night: #0d0d0d; /* category band */
+  --color-muted: #6b655c; /* warm grey secondary text (darkened from #7A746B to pass WCAG AA 4.5:1 on paper and sand) */
+  --color-line: #e2ddd3; /* borders on paper */
+  --color-sand: #ece8e0; /* image placeholders, subtle fills */
+  --color-sale: #7a2e2a; /* oxblood: sale badges only */
+  --color-success: #2f5d3a;
+  --color-danger: #9b2c2c;
+  --color-warn: #8a5a12; /* admin: needs attention */
+  --color-info: #2c4a6b; /* admin: in progress */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-bangla: var(--font-hind), var(--font-inter), sans-serif;
 }
 
 html {
@@ -16,11 +24,59 @@ html {
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-paper);
   color: var(--color-ink);
 }
 
+/* Bangla UI: Hind Siliguri, slightly larger and looser for legibility. */
+.lang-bn {
+  font-family: var(--font-bangla);
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+/* Small uppercase tracked labels: nav, eyebrows, buttons. */
+@utility label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Home ticker: two identical rows slide left by one row's width, then loop. Pauses on hover. */
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker 40s linear infinite;
+}
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+/* Sections fade up as they scroll into view. CSS-only: browsers without scroll timelines show them as is. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ticker-track,
+  .reveal {
+    animation: none !important;
+  }
   html {
     scroll-behavior: auto;
   }

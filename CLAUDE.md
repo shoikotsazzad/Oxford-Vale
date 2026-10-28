@@ -33,10 +33,12 @@ Reference: `notes/design/reference-evora-style-home.jpg` (layout/style only; bra
 - Layout: header = category links left, centered wordmark with small tagline, icon links right (search, account, wishlist, cart). Hero = huge "OXFORD VALE" wordmark with the cut-out model in front of it, tagline top-left, "Shop Now" + "Explore Collection" bottom-left, "New collection" note right. Black category band with 4–5 image cards (title, line, "Shop" pill). New-season split banner (serif headline left, photo right). 4-item feature bar with line icons and dividers. "Best of" product row (5 columns desktop, 2 mobile) with hover image swap, wishlist heart, name + ৳ price.
 
 ## Status
-- Stage: new — step 1 proposal written, **awaiting developer approval** (`notes/plan.md` §9 has 4 open decisions)
-- Done: project setup, brief, product CSV, design reference saved
-- Pending: approval → build steps 1–7 (plan §8)
-- Placeholders open: business IDs, bank details, domain (all placeholders by design); developer-provided brand photos
+- Stage: delivered (portfolio build) — all 7 build steps done 2026-10-23; home redesign + navigation change request done 2026-10-23. Next: developer review, commit and deploy.
+- Done: storefront, cart + lead capture, checkout (COD, SSLCommerz mock/sandbox, bKash/Nagad manual), orders, tracking, customer accounts + wishlist, full admin panel with roles + audit log, demo data (`seed -- --demo`), email/SMS notifications (log mode until accounts are added), 89 tests, Lighthouse a11y/best-practices 100, perf 90–99
+- Pending (before a real launch, see notes/missing.md): real product + brand photos (home uses credited stand-ins), SMTP/SMS/SSLCommerz live accounts, cloud image storage, remove demo data, brand photos in public/brand/, confirm drafted policy details
+- Dev note: the developer often runs `npm run dev` on :3000 — test against it instead of starting a second server.
+- Placeholders open: business IDs, bank details, domain (all placeholders by design)
+- Developer connects their own MongoDB (local .env.local points at mongodb://127.0.0.1:27017/oxford-vale). Never git commit or push until the developer says so.
 
 ## Working method (from brief)
 - Do not write code until the developer approves `notes/plan.md`.

@@ -1,12 +1,9 @@
-import { site } from "@/data/site";
+/** "01700-000002" → "8801700000002" for wa.me and tel: links. */
+export const intlDigits = (phone: string) => {
+  const d = phone.replace(/\D/g, "");
+  return d.startsWith("88") ? d : `88${d}`;
+};
 
-export const telLink = () => `tel:${site.phone}`;
-
-export const whatsappLink = (text: string = site.whatsappGreeting) =>
-  `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
-
-/** Resolve a CTA href: "whatsapp", "call", or a normal route/URL. */
-export const ctaHref = (href: string) =>
-  href === "whatsapp" ? whatsappLink() : href === "call" ? telLink() : href;
-
-export const isExternal = (href: string) => /^(https?:|tel:|mailto:)/.test(href);
+export const telLink = (phone: string) => `tel:+${intlDigits(phone)}`;
+export const whatsappLink = (phone: string, text?: string) =>
+  `https://wa.me/${intlDigits(phone)}${text ? `?text=${encodeURIComponent(text)}` : ""}`;

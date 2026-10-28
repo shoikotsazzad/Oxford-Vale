@@ -1,0 +1,151 @@
+SKU,Name,Category,Price_BDT,Sale_BDT,Colours,Sizes,Tag,Fabric,Stock_per_size
+OV-SUT-001,Oxford Charcoal Two-Piece Suit,Suits,18500,,Charcoal,38-46,Best Seller,Wool blend,20
+OV-SUT-002,Navy Pinstripe Three-Piece Suit,Suits,24500,21900,Navy,38-46,New Season,Wool,12
+OV-SUT-003,Mid-Grey Herringbone Suit,Suits,19800,,Grey,38-46,New Season,Wool tweed,15
+OV-SUT-004,Black Tuxedo Dinner Suit,Suits,22000,,Black,38-46,,Wool,10
+OV-SUT-005,Tan Linen Summer Suit,Suits,14500,12900,Tan,38-46,Summer,Linen,18
+OV-SUT-006,Brown Check Three-Piece Suit,Suits,26500,,Brown,38-46,Heritage,Wool,8
+OV-SUT-007,Slim Navy Wedding Suit,Suits,21500,,Navy,38-46,,Wool,12
+OV-SUT-008,Light Blue Cotton Suit,Suits,13800,,Light Blue,38-46,Summer,Cotton,15
+OV-SUT-009,Forest Green Tweed Suit,Suits,27500,,Green,38-46,Heritage,Tweed,6
+OV-SUT-010,Prince of Wales Check Suit,Suits,25500,23000,Grey Check,38-46,Best Seller,Wool,10
+OV-SUT-011,Double-Breasted Navy Suit,Suits,23500,,Navy,38-46,,Wool,9
+OV-SUT-012,Beige Cotton Chino Suit,Suits,12500,,Beige,38-46,Summer,Cotton,14
+OV-SUT-013,Burgundy Velvet Dinner Jacket Set,Suits,28500,,Burgundy,38-46,Limited,Velvet,5
+OV-SUT-014,Charcoal Flannel Suit,Suits,19500,,Charcoal,38-46,Winter,Flannel,15
+OV-SUT-015,Midnight Blue Suit,Suits,20500,,Midnight Blue,38-46,,Wool,12
+OV-BLZ-001,Navy Cotton Blazer,Blazers,8900,,Navy,38-46,Best Seller,Cotton,20
+OV-BLZ-002,Camel Overcheck Blazer,Blazers,9800,,Camel,38-46,New Season,Wool blend,14
+OV-BLZ-003,Grey Donegal Tweed Jacket,Blazers,11500,,Grey,38-46,Heritage,Donegal tweed,10
+OV-BLZ-004,Navy Bomber Jacket,Blazers,7500,6900,Navy,S-XXL,,Nylon blend,18
+OV-BLZ-005,Black Leather Biker Jacket,Blazers,16500,,Black,S-XXL,,Genuine leather,8
+OV-BLZ-006,Olive Field Jacket,Blazers,6900,,Olive,S-XXL,Heritage,Cotton canvas,16
+OV-BLZ-007,Brown Suede Jacket,Blazers,13500,,Brown,S-XXL,,Suede,7
+OV-BLZ-008,Navy Corduroy Blazer,Blazers,8500,,Navy,38-46,Winter,Corduroy,12
+OV-BLZ-009,Houndstooth Sports Coat,Blazers,10500,,Black/White,38-46,Best Seller,Wool,9
+OV-BLZ-010,Stone Linen Blazer,Blazers,7800,,Stone,38-46,Summer,Linen,15
+OV-BLZ-011,Charcoal Unstructured Blazer,Blazers,9200,,Charcoal,38-46,,Wool blend,13
+OV-BLZ-012,Burgundy Dinner Blazer,Blazers,10900,,Burgundy,38-46,,Wool,8
+OV-BLZ-013,Quilted Gilet Jacket,Blazers,6500,5900,Black,S-XXL,Winter,Polyester,20
+OV-BLZ-014,Tan Harrington Jacket,Blazers,7200,,Tan,S-XXL,,Cotton,14
+OV-BLZ-015,Navy Trench-Style Blazer,Blazers,9500,,Navy,38-46,New Season,Cotton twill,11
+OV-OUT-001,Wool Overcoat Charcoal,Outerwear,22500,,Charcoal,38-46,Best Seller,Wool,10
+OV-OUT-002,Camel Double-Breasted Overcoat,Outerwear,24500,,Camel,38-46,New Season,Wool,8
+OV-OUT-003,Navy Peacoat,Outerwear,15900,,Navy,S-XXL,Winter,Wool blend,12
+OV-OUT-004,Black Long Trench Coat,Outerwear,18500,16900,Black,38-46,Best Seller,Cotton gabardine,14
+OV-OUT-005,Beige Classic Trench Coat,Outerwear,16800,,Beige,38-46,Heritage,Cotton,13
+OV-OUT-006,Grey Tweed Overcoat,Outerwear,26500,,Grey,38-46,Heritage,Tweed,6
+OV-OUT-007,Waxed Cotton Jacket Olive,Outerwear,13900,,Olive,S-XXL,Heritage,Waxed cotton,11
+OV-OUT-008,Quilted Down Jacket Black,Outerwear,12500,10900,Black,S-XXL,Winter,Nylon with down,16
+OV-OUT-009,Hooded Parka Navy,Outerwear,11800,,Navy,S-XXL,Winter,Cotton blend,12
+OV-OUT-010,Harris Tweed Coat,Outerwear,29500,,Brown,38-46,Limited,Harris tweed,4
+OV-OUT-011,Shearling Collar Coat,Outerwear,31500,,Tan,38-46,Winter,Wool and shearling,5
+OV-OUT-012,Caped Wool Coat Black,Outerwear,27500,,Black,38-46,Limited,Wool,5
+OV-OUT-013,Rain Mac Stone,Outerwear,8900,,Stone,S-XXL,,Polyester,18
+OV-OUT-014,Suede Car Coat Brown,Outerwear,19500,,Brown,S-XXL,,Suede,7
+OV-OUT-015,Lightweight Windbreaker Navy,Outerwear,5500,4900,Navy,S-XXL,Summer,Nylon,22
+OV-OUT-016,Donkey Jacket Olive,Outerwear,12900,,Olive,S-XXL,Heritage,Cotton drill,10
+OV-OUT-017,Duffle Coat Camel,Outerwear,17500,,Camel,S-XXL,Heritage,Wool,8
+OV-OUT-018,Grey Reversible Puffer,Outerwear,9800,,Grey,S-XXL,Winter,Polyester,15
+OV-OUT-019,Herringbone Topcoat,Outerwear,21500,,Grey,38-46,New Season,Wool herringbone,9
+OV-OUT-020,Navy Mac Raincoat,Outerwear,7900,,Navy,S-XXL,,Cotton,16
+OV-WST-001,Charcoal Herringbone Waistcoat,Waistcoats,4500,,Charcoal,36-46,Best Seller,Wool,20
+OV-WST-002,Navy Pinstripe Waistcoat,Waistcoats,4800,,Navy,36-46,,Wool,15
+OV-WST-003,Brown Tweed Waistcoat,Waistcoats,5200,,Brown,36-46,Heritage,Tweed,12
+OV-WST-004,Black Satin Waistcoat,Waistcoats,4900,4400,Black,36-46,,Satin,14
+OV-WST-005,Grey Check Waistcoat,Waistcoats,4600,,Grey Check,36-46,New Season,Wool,13
+OV-WST-006,Burgundy Dinner Waistcoat,Waistcoats,5100,,Burgundy,36-46,,Wool,9
+OV-WST-007,Olive Corduroy Waistcoat,Waistcoats,3900,,Olive,36-46,Winter,Corduroy,11
+OV-WST-008,Cream Linen Waistcoat,Waistcoats,3600,,Cream,36-46,Summer,Linen,16
+OV-WST-009,Navy Knit Waistcoat,Waistcoats,3800,,Navy,S-XXL,,Cotton knit,14
+OV-WST-010,Tan Suede Waistcoat,Waistcoats,6200,,Tan,36-46,Limited,Suede,6
+OV-SHR-001,White Oxford Button-Down Shirt,Shirts,2200,,White,S-XXL,Best Seller,Cotton,40
+OV-SHR-002,Light Blue Oxford Shirt,Shirts,2200,,Light Blue,S-XXL,Best Seller,Cotton,35
+OV-SHR-003,Pink Oxford Shirt,Shirts,2200,1900,Pink,S-XXL,,Cotton,25
+OV-SHR-004,White Poplin Dress Shirt,Shirts,2400,,White,S-XXL,,Cotton poplin,30
+OV-SHR-005,Blue Striped Business Shirt,Shirts,2500,,Blue Stripe,S-XXL,New Season,Cotton,22
+OV-SHR-006,Navy Check Flannel Shirt,Shirts,2800,,Navy Check,S-XXL,Winter,Flannel,18
+OV-SHR-007,Linen Band Collar Shirt,Shirts,2600,,White,S-XXL,Summer,Linen,16
+OV-SHR-008,Mandarin Collar Shirt Black,Shirts,2300,,Black,S-XXL,,Cotton,20
+OV-SHR-009,Burgundy Twill Shirt,Shirts,2500,,Burgundy,S-XXL,,Cotton twill,15
+OV-SHR-010,Olive Military Shirt,Shirts,2700,,Olive,S-XXL,Heritage,Cotton,14
+OV-SHR-011,Ivory Evening Dress Shirt,Shirts,3200,2900,Ivory,S-XXL,,Cotton,12
+OV-SHR-012,Mint Green Oxford Shirt,Shirts,2200,,Mint,S-XXL,Summer,Cotton,18
+OV-SHR-013,Grey Chambray Shirt,Shirts,2400,,Grey,S-XXL,,Chambray,16
+OV-SHR-014,Brown Gingham Shirt,Shirts,2500,,Brown Check,S-XXL,Heritage,Cotton,13
+OV-SHR-015,Black Silk Blend Shirt,Shirts,3600,,Black,S-XXL,Limited,Silk blend,8
+OV-SHR-016,Navy Short Sleeve Shirt,Shirts,1900,,Navy,S-XXL,Summer,Cotton,22
+OV-SHR-017,Hawaiian Style Resort Shirt,Shirts,2100,1800,Print,S-XXL,Summer,Viscose,18
+OV-SHR-018,Sky Blue Polo Shirt,Shirts,1600,,Sky Blue,S-XXL,,Pique cotton,30
+OV-SHR-019,Cream Henley Shirt,Shirts,1700,,Cream,S-XXL,,Cotton,20
+OV-SHR-020,White Tuxedo Shirt Pleated,Shirts,3000,,White,S-XXL,,Cotton,10
+OV-TRS-001,Charcoal Wool Trousers,Trousers,4800,,Charcoal,28-40,Best Seller,Wool,25
+OV-TRS-002,Navy Pleated Trousers,Trousers,4900,,Navy,28-40,,Wool,20
+OV-TRS-003,Beige Chino Slim Fit,Trousers,2900,2600,Beige,28-40,Summer,Cotton twill,30
+OV-TRS-004,Olive Cargo Trousers,Trousers,3200,,Olive,28-40,Heritage,Cotton,18
+OV-TRS-005,Grey Flannel Trousers,Trousers,4200,,Grey,28-40,Winter,Flannel,16
+OV-TRS-006,Black Dress Trousers,Trousers,3800,,Black,28-40,,Polyester blend,28
+OV-TRS-007,Brown Corduroy Trousers,Trousers,3500,,Brown,28-40,Winter,Corduroy,14
+OV-TRS-008,Stone Linen Trousers,Trousers,3000,,Stone,28-40,Summer,Linen,20
+OV-TRS-009,Navy Jeans Straight Fit,Trousers,3400,,Navy,28-40,,Denim,22
+OV-TRS-010,Black Jeans Slim Fit,Trousers,3300,3000,Black,28-40,,Denim,24
+OV-TRS-011,Tan Chino Relaxed Fit,Trousers,2800,,Tan,28-40,,Cotton,20
+OV-TRS-012,Glen Check Trousers,Trousers,4500,,Grey Check,28-40,Heritage,Wool,9
+OV-TRS-013,Charcoal Jogger Trousers,Trousers,2600,,Charcoal,S-XXL,,Cotton fleece,26
+OV-TRS-014,Olive Wide Leg Trousers,Trousers,3600,,Olive,28-40,New Season,Cotton,15
+OV-TRS-015,Dark Brown Moleskin Trousers,Trousers,3700,,Dark Brown,28-40,Winter,Cotton moleskin,12
+OV-KNT-001,Navy Crew Neck Merino Jumper,Knitwear,5200,,Navy,S-XXL,Best Seller,Merino wool,18
+OV-KNT-002,Grey Cable Knit Sweater,Knitwear,4800,,Grey,S-XXL,Winter,Wool blend,16
+OV-KNT-003,Cream Aran Sweater,Knitwear,5500,,Cream,S-XXL,Heritage,Wool,12
+OV-KNT-004,Burgundy V-Neck Sweater,Knitwear,4200,3800,Burgundy,S-XXL,,Cotton,20
+OV-KNT-005,Black Turtleneck,Knitwear,3900,,Black,S-XXL,,Merino blend,22
+OV-KNT-006,Camel Quarter Zip Sweater,Knitwear,4600,,Camel,S-XXL,New Season,Cotton,14
+OV-KNT-007,Olive Shawl Collar Cardigan,Knitwear,5900,,Olive,S-XXL,Heritage,Wool,9
+OV-KNT-008,Navy Half Zip Pullover,Knitwear,4100,,Navy,S-XXL,,Acrylic blend,17
+OV-KNT-009,Charcoal Fisherman Knit,Knitwear,5400,,Charcoal,S-XXL,Winter,Wool,11
+OV-KNT-010,Light Grey Lambswool Vest,Knitwear,3700,,Light Grey,S-XXL,,Lambswool,13
+OV-TIE-001,Navy Silk Tie Woven,Ties,1500,,Navy,One Size,Best Seller,Silk,40
+OV-TIE-002,Burgundy Repp Stripe Tie,Ties,1400,,Burgundy,One Size,,Silk,30
+OV-TIE-003,Silver Grey Skinny Tie,Ties,1200,1000,Grey,One Size,,Polyester,35
+OV-TIE-004,Bow Tie Black Satin,Ties,1100,,Black,One Size,,Satin,25
+OV-TIE-005,Paisley Silk Tie Gold,Ties,1600,,Gold,One Size,New Season,Silk,22
+OV-TIE-006,Knitted Wool Tie Brown,Ties,1300,,Brown,One Size,Winter,Wool,18
+OV-TIE-007,Floral Print Bow Tie,Ties,1200,,Multi,One Size,,Cotton,15
+OV-TIE-008,Ivory Silk Pocket Square,Ties,800,,Ivory,One Size,,Silk,50
+OV-TIE-009,Navy Paisley Pocket Square,Ties,750,,Navy,One Size,,Cotton,45
+OV-TIE-010,Tweed Pocket Square Brown,Ties,900,,Brown,One Size,Heritage,Wool,30
+OV-ACC-001,Brown Leather Belt Classic,Accessories,2800,,Brown,S-XXL,Best Seller,Full grain leather,25
+OV-ACC-002,Black Leather Belt Reversible,Accessories,3200,,Black,S-XXL,,Leather,20
+OV-ACC-003,Silver Cufflinks Engraved Bar,Accessories,1800,,Silver,One Size,,Sterling silver plated,30
+OV-ACC-004,Gold Cufflinks Round,Accessories,2200,2000,Gold,One Size,,Brass,25
+OV-ACC-005,Pocket Watch Chain Antique,Accessories,2500,,Antique Brass,One Size,Heritage,Brass,15
+OV-ACC-006,Leather Wallet Bifold Tan,Accessories,2400,,Tan,One Size,,Leather,30
+OV-ACC-007,Leather Card Holder Black,Accessories,1500,,Black,One Size,,Leather,40
+OV-ACC-008,Canvas Weekender Bag Olive,Accessories,6500,,Olive,One Size,New Season,Canvas,12
+OV-ACC-009,Leather Briefcase Brown,Accessories,12500,,Brown,One Size,Heritage,Full grain leather,8
+OV-ACC-010,Wool Scarf Charcoal,Accessories,2900,,Charcoal,One Size,Winter,Wool,22
+OV-ACC-011,Cashmere Scarf Navy,Accessories,4800,4300,Navy,One Size,Winter,Cashmere blend,14
+OV-ACC-012,Leather Gloves Brown,Accessories,3200,,Brown,S-XL,Winter,Lambskin,12
+OV-ACC-013,Sunglasses Round Gold Frame,Accessories,3500,,Gold,One Size,,Metal frame,16
+OV-ACC-014,Umbrella Automatic Black,Accessories,1900,,Black,One Size,,Fibreglass,30
+OV-ACC-015,Travel Passport Holder Tan,Accessories,1300,,Tan,One Size,,Leather,28
+OV-CAP-001,Peaky Flat Cap Charcoal Tweed,Caps,2900,,Charcoal,M/L,Best Seller,Wool tweed,25
+OV-CAP-002,Peaky Flat Cap Brown Herringbone,Caps,2900,2600,Brown,M/L,Heritage,Wool,20
+OV-CAP-003,Newsboy Cap Navy,Caps,2200,,Navy,M/L,,Cotton,18
+OV-CAP-004,Classic Tweed Cap Green,Caps,2700,,Green,M/L,Heritage,Tweed,12
+OV-CAP-005,Flat Cap Grey Check,Caps,2600,,Grey Check,M/L,New Season,Wool,15
+OV-CAP-006,Baker Boy Cap Olive,Caps,1900,,Olive,M/L,Summer,Cotton,20
+OV-CAP-007,Felt Fedora Black,Caps,4200,,Black,M/L,Limited,Felt,8
+OV-CAP-008,Trilby Hat Brown,Caps,3800,,Brown,M/L,Heritage,Felt,7
+OV-CAP-009,Wool Beanie Charcoal,Caps,1200,,Charcoal,One Size,Winter,Merino,30
+OV-CAP-010,Panama Hat Cream,Caps,3500,3200,Cream,M/L,Summer,Toquilla straw,10
+OV-SHO-001,Black Derby Leather Shoes,Shoes,8900,,Black,40-45,Best Seller,Full grain leather,15
+OV-SHO-002,Brown Oxford Brogues,Shoes,9500,,Brown,40-45,Heritage,Leather,12
+OV-SHO-003,Tan Chelsea Boots,Shoes,8500,7900,Tan,40-45,New Season,Suede,14
+OV-SHO-004,Black Monk Strap Shoes,Shoes,9200,,Black,40-45,,Leather,10
+OV-SHO-005,Brown Desert Boots Suede,Shoes,7200,,Brown,40-45,Summer,Suede,16
+OV-SHO-006,White Leather Sneakers,Shoes,5500,,White,40-45,Best Seller,Leather,22
+OV-SHO-007,Navy Loafers Suede,Shoes,6800,,Navy,40-45,,Suede,12
+OV-SHO-008,Black Leather Loafers,Shoes,6500,,Black,40-45,,Leather,15
+OV-SHO-009,Brown Leather Boots Lace-Up,Shoes,10500,,Brown,40-45,Winter,Leather,9
+OV-SHO-010,Burgundy Wingtip Brogues,Shoes,10200,,Burgundy,40-45,Limited,Leather,6

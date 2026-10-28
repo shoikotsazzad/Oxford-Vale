@@ -43,3 +43,6 @@ next-env.d.ts
 
 # project notes
 /notes/shots/
+
+# admin uploads (local storage provider)
+/storage/
