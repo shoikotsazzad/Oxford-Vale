@@ -1,14 +1,15 @@
 import { z } from "zod";
 
-/** Bangladesh mobile: 01XXXXXXXXX (11 digits, operator 3–9). Accepts +88 / spaces / dashes and normalises. */
-export const BD_PHONE = /^01[3-9]\d{8}$/;
-export const normalizePhone = (v: string) => v.replace(/[\s-]/g, "").replace(/^\+?88(?=01)/, "");
+import { isValidPhone, normalizePhone } from "@/lib/phone";
 
+export { normalizePhone };
+
+/** UK mobile or landline (07…, 020…, 0800…), or an international number starting with +. Stored normalised. */
 export const phoneSchema = z
   .string()
   .trim()
   .transform(normalizePhone)
-  .refine((v) => BD_PHONE.test(v), "Enter a valid Bangladeshi mobile number (01XXXXXXXXX).");
+  .refine(isValidPhone, "Enter a valid phone number, e.g. 07700 900123 or 020 7946 0001 (or +country code).");
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address."));
 export const optionalEmailSchema = z

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CloseIcon, MenuIcon } from "@/components/ui/icons";
 import { adminLogout } from "@/server/actions/admin/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export type NavItem = { href: string; label: string; badge?: number };
 export type NavGroup = { title: string; items: NavItem[] };
@@ -23,10 +24,10 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active(item.href) ? "page" : undefined}
-                  className={`flex min-h-10 items-center justify-between rounded-md px-3 text-sm transition-colors ${active(item.href) ? "bg-white text-ink" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+                  className={`flex min-h-10 items-center justify-between rounded-md px-3 text-sm transition-colors ${active(item.href) ? "bg-white text-night" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
                 >
                   {item.label}
-                  {item.badge ? <span className="rounded-full bg-warn px-2 text-xs leading-5 text-white">{item.badge}</span> : null}
+                  {item.badge ? <span className="rounded-full bg-warn px-2 text-xs leading-5 text-paper">{item.badge}</span> : null}
                 </Link>
               </li>
             ))}
@@ -42,7 +43,8 @@ function Footer({ name, role }: { name: string; role: string }) {
     <div className="border-t border-white/10 pt-4 text-sm">
       <p className="truncate text-white">{name}</p>
       <p className="text-white/50">{role}</p>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
+        <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-md border border-white/20 text-white/80 hover:bg-white/10 [&_svg]:h-4 [&_svg]:w-4" />
         <Link href="/" className="label rounded-md border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" target="_blank">View store</Link>
         <form action={adminLogout}>
           <button className="label rounded-md border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10">Log out</button>
@@ -83,9 +85,12 @@ export function AdminSidebar({ groups, name, role }: { groups: NavGroup[]; name:
       {/* Mobile top bar + drawer */}
       <div className="sticky top-0 z-30 flex h-14 items-center justify-between bg-charcoal px-4 lg:hidden">
         <Link href="/admin" className="font-serif text-lg text-white">OXFORD VALE <span className="label text-white/60">Admin</span></Link>
-        <button type="button" onClick={() => setOpen(true)} className="flex h-11 w-11 items-center justify-center text-white" aria-label="Open menu" aria-expanded={open}>
-          <MenuIcon />
-        </button>
+        <div className="flex items-center">
+          <ThemeToggle className="flex h-11 w-11 items-center justify-center text-white" />
+          <button type="button" onClick={() => setOpen(true)} className="flex h-11 w-11 items-center justify-center text-white" aria-label="Open menu" aria-expanded={open}>
+            <MenuIcon />
+          </button>
+        </div>
       </div>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">

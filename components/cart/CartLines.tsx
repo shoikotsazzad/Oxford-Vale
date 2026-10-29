@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Price } from "@/components/ui/Price";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { imageSrc, isPlaceholder } from "@/lib/images";
 import type { CartLineDTO } from "@/lib/types";
 import { useCart } from "./CartProvider";
@@ -33,7 +33,7 @@ function Line({ line, compact, onNavigate }: { line: CartLineDTO; compact?: bool
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex justify-between gap-3">
           <Link href={`/product/${line.slug}`} onClick={onNavigate} className="text-sm leading-snug hover:underline underline-offset-4">{line.name}</Link>
-          <span className="shrink-0 text-sm">{formatBDT(line.lineTotal)}</span>
+          <span className="shrink-0 text-sm">{formatMoney(line.lineTotal)}</span>
         </div>
         <p className="mt-1 text-xs text-muted">
           {line.size !== "One Size" && <>{t.cart.size}: {line.size} · </>}{t.cart.colour}: {line.colour}
@@ -65,7 +65,7 @@ export function FreeDeliveryBar({ gap, threshold }: { gap: number; threshold: nu
   const pct = Math.min(100, Math.round(((threshold - gap) / threshold) * 100));
   return (
     <div>
-      <p className="text-xs">{gap > 0 ? t.cart.freeGap.replace("{amount}", formatBDT(gap)) : t.cart.freeReached}</p>
+      <p className="text-xs">{gap > 0 ? t.cart.freeGap.replace("{amount}", formatMoney(gap)) : t.cart.freeReached}</p>
       <div className="mt-2 h-1 overflow-hidden rounded-full bg-line" aria-hidden="true">
         <div className="h-full rounded-full bg-ink transition-[width] duration-500" style={{ width: `${pct}%` }} />
       </div>

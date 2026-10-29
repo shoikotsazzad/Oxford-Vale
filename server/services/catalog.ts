@@ -282,14 +282,3 @@ export async function getProductCardsBySlugs(slugs: string[]): Promise<ProductCa
   const bySlug = new Map(docs.map((d) => [d.slug, d]));
   return slugs.flatMap((s) => (bySlug.has(s) ? [toCard(bySlug.get(s) as unknown as LeanProduct)] : []));
 }
-
-/** Cards for specific products (wishlist), in the given order. Not cached: per-user. */
-export async function getProductCardsByIds(ids: string[]): Promise<ProductCardDTO[]> {
-  if (!ids.length) return [];
-  await connectDB();
-  const docs = await ProductModel.find({ _id: { $in: ids }, status: "active" })
-    .populate<{ category: Category & { _id: Types.ObjectId } }>("category", "name")
-    .lean();
-  const byId = new Map(docs.map((d) => [String(d._id), d]));
-  return ids.flatMap((id) => (byId.has(id) ? [toCard(byId.get(id) as unknown as LeanProduct)] : []));
-}

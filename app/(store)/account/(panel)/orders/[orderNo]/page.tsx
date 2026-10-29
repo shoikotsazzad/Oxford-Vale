@@ -6,7 +6,7 @@ import { getSettings } from "@/server/services/settings";
 import { getOrderView } from "@/server/services/order-view";
 import { orderKey } from "@/server/crypto";
 import { buildMetadata } from "@/lib/seo";
-import { whatsappLink } from "@/lib/contact";
+import { mailtoLink } from "@/lib/contact";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { OrderDetails } from "@/components/order/OrderDetails";
 import { OrderActions } from "@/components/order/OrderActions";
@@ -18,7 +18,7 @@ export default async function AccountOrderPage({ params }: PageProps<"/account/o
   await requestDB();
   const [user, order, settings] = await Promise.all([getCurrentUser(), getOrderView(orderNo), getSettings()]);
   if (!user || !order || order.userId !== user.id) notFound();
-  const needsPayment = order.status === "pending" && order.paymentStatus !== "paid" && order.paymentMethod !== "cod" && !order.awaitingVerification;
+  const needsPayment = order.status === "pending" && order.paymentStatus !== "paid";
   return (
     <div>
       <Breadcrumbs items={[{ label: t.account.orders, href: "/account/orders" }, { label: order.orderNo }]} />
@@ -27,7 +27,7 @@ export default async function AccountOrderPage({ params }: PageProps<"/account/o
         <OrderDetails order={order} t={t} actions={
           <OrderActions orderNo={order.orderNo} canCancel={order.status === "pending"}
             payHref={needsPayment ? `/checkout/pay/${order.orderNo}?key=${orderKey(order.orderNo)}` : undefined}
-            whatsappHref={whatsappLink(settings.contact.whatsapp, `Hello ${settings.storeName}, I have a question about my order ${order.orderNo}.`)} />
+            contactHref={mailtoLink(settings.contact.supportEmail || settings.contact.email, `Order ${order.orderNo}`)} />
         } />
       </div>
     </div>

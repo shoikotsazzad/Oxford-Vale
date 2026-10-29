@@ -41,19 +41,19 @@ export type Cta = { label: string; href: string };
 export type StoreSettings = {
   storeName: string;
   tagline: string;
-  legal: { name: string; tradeLicence: string; tin: string; bin: string };
-  contact: { phone: string; whatsapp: string; email: string; supportEmail: string; ordersEmail: string };
+  legal: { name: string; companyNo: string; vatNo: string; registeredOffice: string };
+  contact: { phone: string; freephone: string; email: string; supportEmail: string; ordersEmail: string };
   address: { line: string; area: string; city: string; postalCode: string; country: string };
   hours: { label: string; value: string }[];
-  socials: { facebook: string; instagram: string; youtube: string; tiktok: string };
+  socials: { facebook: string; instagram: string; x: string; youtube: string };
   announcementBar: { text: string; link: string; active: boolean };
   hero: { eyebrow: string; title: string; subtitle: string; image: string; note: string; ctas: Cta[] };
   newSeasonBanner: { eyebrow: string; title: string; text: string; image: string; cta: Cta };
   freeDeliveryThreshold: number;
   abandonedAfterMinutes: number;
   lowStockThreshold: number;
-  payments: { cod: boolean; sslcommerz: boolean; bkash: { enabled: boolean; number: string }; nagad: { enabled: boolean; number: string } };
-  bank: { accountName: string; accountNo: string; bankBranch: string };
+  payments: { stripe: boolean; paypal: boolean };
+  bank: { accountName: string; sortCode: string; accountNo: string; bank: string };
   invoiceFooter: string;
 };
 

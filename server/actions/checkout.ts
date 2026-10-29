@@ -16,22 +16,28 @@ import { getSettings } from "@/server/services/settings";
 import { getZones } from "@/server/services/delivery";
 import { findCart } from "@/server/services/cart";
 import { upsertLead } from "@/server/services/lead";
-import { cancelOrder, OrderError, placeOrder, priceCart, quote, type Quote, type StoreRules } from "@/server/services/order";
-import { initPayment, type GatewayOrder } from "@/server/adapters/payments/sslcommerz";
-import { payUrl, orderUrl } from "@/server/services/payment-redirect";
-import { checkoutSchema, manualPaymentSchema, trackSchema } from "@/lib/validation/checkout";
+import { cancelOrder, isPaymentEnabled, OrderError, placeOrder, priceCart, quote, type Quote, type StoreRules } from "@/server/services/order";
+import { startPayment, type GatewayOrder } from "@/server/adapters/payments";
+import { payUrl } from "@/server/services/payment-redirect";
+import { checkoutSchema, trackSchema } from "@/lib/validation/checkout";
 import { leadSchema } from "@/lib/validation/cart";
+import { normalizePhone } from "@/lib/phone";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/models/enums";
 import { CATALOG_TAG } from "@/server/services/catalog";
 
-type OrderForGateway = Pick<Order, "orderNo" | "total" | "customer" | "shippingAddress" | "items">;
-const gatewayOrder = (o: OrderForGateway): GatewayOrder => ({
+const gatewayOrder = (o: Pick<Order, "orderNo" | "total" | "customer">): GatewayOrder => ({
   orderNo: o.orderNo,
   total: o.total,
-  customer: o.customer!,
-  address: o.shippingAddress!,
-  itemCount: o.items.reduce((n, i) => n + i.qty, 0),
-  productNames: o.items.map((i) => i.name).join(", "),
+  email: o.customer?.email ?? "",
+  name: o.customer?.name ?? "",
 });
+
+/** Send the shopper to Stripe / PayPal; remember the provider session on the order. */
+async function beginPayment(method: PaymentMethod, order: Pick<Order, "orderNo" | "total" | "customer">) {
+  const { url, sessionId } = await startPayment(method, gatewayOrder(order));
+  await OrderModel.updateOne({ orderNo: order.orderNo }, { paymentMethod: method, paymentStatus: "unpaid", "payment.sessionId": sessionId });
+  return url;
+}
 
 async function rules(): Promise<StoreRules> {
   const [settings, zones] = await Promise.all([getSettings(), getZones()]);
@@ -46,13 +52,17 @@ function handle(err: unknown, fallback = "Something went wrong. Please try again
 
 export type QuoteResult = Quote & { problems: string[] };
 
-/** Live order summary while the shopper fills in the form. */
-export async function getCheckoutQuote(input: { division?: string; district?: string; upazila?: string; couponCode?: string; phone?: string }): Promise<Result<QuoteResult>> {
+/** Live order summary while the shopper fills in the form: delivery options for the country, fees and coupon. */
+export async function getCheckoutQuote(input: { country?: string; deliveryOption?: string; couponCode?: string; phone?: string }): Promise<Result<QuoteResult>> {
   try {
     await connectDB();
     const { lines, problems } = await priceCart(await getCartToken());
-    const address = input.district && input.upazila && input.division ? { division: input.division, district: input.district, upazila: input.upazila } : null;
-    const { coupon: _c, ...q } = await quote(lines, await rules(), { address, couponCode: input.couponCode?.slice(0, 30), phone: input.phone });
+    const country = /^[A-Z]{2}$/.test(input.country ?? "") ? input.country! : null;
+    const { coupon: _c, ...q } = await quote(lines, await rules(), {
+      delivery: country ? { country, optionId: input.deliveryOption } : null,
+      couponCode: input.couponCode?.slice(0, 30),
+      phone: input.phone ? normalizePhone(input.phone) : undefined,
+    });
     return ok({ ...q, problems });
   } catch (err) {
     return handle(err);
@@ -100,13 +110,13 @@ export async function placeOrderAction(input: unknown): Promise<Result<{ orderNo
     }
 
     const { order, slugs } = await placeOrder(
-      { cartToken: await getCartToken(), userId: user?.id, contact, address, paymentMethod: data.paymentMethod, couponCode: data.couponCode || null, note: cleanText(data.note, { multiline: true }) },
+      { cartToken: await getCartToken(), userId: user?.id, contact, address, deliveryOption: data.deliveryOption, paymentMethod: data.paymentMethod, couponCode: data.couponCode || null, note: cleanText(data.note, { multiline: true }) },
       await rules(),
     );
 
     if (user && (data.saveAddress || data.createAccount)) {
       const u = await UserModel.findById(user.id).select("addresses").lean();
-      const exists = u?.addresses.some((a) => a.addressLine === address.addressLine && a.upazila === address.upazila);
+      const exists = u?.addresses.some((a) => a.line1 === address.line1 && a.postcode === address.postcode && a.country === address.country);
       if (!exists) await UserModel.updateOne({ _id: user.id }, { $push: { addresses: { ...address, label: "Home", isDefault: !u?.addresses.length } } });
     }
 
@@ -114,20 +124,15 @@ export async function placeOrderAction(input: unknown): Promise<Result<{ orderNo
     for (const slug of slugs) revalidateTag(`product:${slug}`, { expire: 0 });
     revalidateTag(CATALOG_TAG, "max");
 
-    // Card payments notify once the gateway answers (payment callbacks); everything else notifies now.
-    if (order.paymentMethod !== "sslcommerz") after(() => notifyOrderPlaced(order.orderNo));
-    if (order.paymentMethod === "sslcommerz") {
-      try {
-        const url = await initPayment(gatewayOrder(order));
-        return ok({ orderNo: order.orderNo, next: url, external: true });
-      } catch (err) {
-        console.error("SSLCommerz init failed", err);
-        after(() => notifyOrderPlaced(order.orderNo)); // the gateway never started, so tell the customer now
-        return ok({ orderNo: order.orderNo, next: payUrl(order.orderNo, "&status=unavailable"), external: false });
-      }
+    // Every order is paid online: the confirmation email goes out once the provider answers (payment routes).
+    try {
+      const url = await beginPayment(order.paymentMethod, order);
+      return ok({ orderNo: order.orderNo, next: url, external: true });
+    } catch (err) {
+      console.error(`${order.paymentMethod} payment start failed`, err);
+      after(() => notifyOrderPlaced(order.orderNo)); // the provider never started, so tell the customer now
+      return ok({ orderNo: order.orderNo, next: payUrl(order.orderNo, "&status=unavailable"), external: false });
     }
-    const next = order.paymentMethod === "cod" ? orderUrl(order.orderNo, "&placed=1") : payUrl(order.orderNo);
-    return ok({ orderNo: order.orderNo, next, external: false });
   } catch (err) {
     return handle(err, "We couldn't place your order. Nothing was charged. Please try again.");
   }
@@ -141,56 +146,18 @@ async function ownedOrder(orderNo: string, key: string | undefined) {
   return user && String(order.user) === user.id ? order : null;
 }
 
-/** bKash / Nagad: the customer submits the transaction ID; an admin verifies it. */
-export async function submitManualPayment(input: unknown): Promise<Result<{ next: string }>> {
-  const parsed = manualPaymentSchema.safeParse(input);
-  if (!parsed.success) return fromZod(parsed.error);
+/** From the pay page: try again, with the same or the other provider. */
+export async function retryOnlinePayment(input: { orderNo: string; key: string; method: string }): Promise<Result<{ next: string }>> {
   try {
     await connectDB();
-    const { orderNo, key, trxId, senderNumber } = parsed.data;
-    const order = await ownedOrder(orderNo, key);
-    if (!order) return fail("NOT_FOUND", "Order not found.");
-    if (!["bkash", "nagad"].includes(order.paymentMethod)) return fail("VALIDATION", "This order isn't paid by bKash or Nagad.");
-    if (order.paymentStatus === "paid") return ok({ next: orderUrl(orderNo) });
-    const dupe = await OrderModel.exists({ "payment.trxId": trxId, orderNo: { $ne: orderNo } });
-    if (dupe) return fail("CONFLICT", "This transaction ID was already used for another order.", { trxId: "This transaction ID was already used." });
-    await OrderModel.updateOne(
-      { orderNo, status: "pending" },
-      { "payment.trxId": trxId, "payment.senderNumber": senderNumber, "payment.submittedAt": new Date(), $push: { statusHistory: { status: "pending", at: new Date(), note: `${order.paymentMethod === "bkash" ? "bKash" : "Nagad"} Trx ID ${trxId} submitted, awaiting verification` } } },
-    );
-    return ok({ next: orderUrl(orderNo, "&submitted=1") });
-  } catch (err) {
-    return handle(err);
-  }
-}
-
-export async function retryOnlinePayment(input: { orderNo: string; key: string }): Promise<Result<{ next: string }>> {
-  try {
-    await connectDB();
+    const method = PAYMENT_METHODS.find((m) => m === input.method);
+    if (!method) return fail("VALIDATION", "Choose a payment method.");
     const order = await ownedOrder(input.orderNo, input.key);
     if (!order || order.status !== "pending" || order.paymentStatus === "paid") return fail("CONFLICT", "This order can't be paid online any more.");
-    await OrderModel.updateOne({ orderNo: order.orderNo }, { paymentMethod: "sslcommerz", paymentStatus: "unpaid" });
-    const url = await initPayment(gatewayOrder(order));
-    return ok({ next: url });
+    if (!isPaymentEnabled(method, await rules())) return fail("VALIDATION", "This payment method isn't available right now.");
+    return ok({ next: await beginPayment(method, order) });
   } catch (err) {
-    return handle(err, "Online payment is unavailable right now. Choose cash on delivery or try again later.");
-  }
-}
-
-export async function switchToCod(input: { orderNo: string; key: string }): Promise<Result<{ next: string }>> {
-  try {
-    await connectDB();
-    const order = await ownedOrder(input.orderNo, input.key);
-    if (!order || order.status !== "pending" || order.paymentStatus === "paid") return fail("CONFLICT", "This order can't be changed any more.");
-    const settings = await getSettings();
-    if (!settings.payments.cod) return fail("VALIDATION", "Cash on delivery isn't available right now.");
-    await OrderModel.updateOne(
-      { orderNo: order.orderNo },
-      { paymentMethod: "cod", paymentStatus: "unpaid", $push: { statusHistory: { status: "pending", at: new Date(), note: "Customer switched to cash on delivery" } } },
-    );
-    return ok({ next: orderUrl(order.orderNo) });
-  } catch (err) {
-    return handle(err);
+    return handle(err, "Online payment is unavailable right now. Please try again in a few minutes or contact us.");
   }
 }
 
@@ -213,8 +180,12 @@ export async function trackOrder(input: unknown): Promise<Result<{ next: string 
   await connectDB();
   const ip = await clientIp();
   if (!(await rateLimit(`track:${ip}`, 20, 15 * 60))) return fail("RATE_LIMITED", "Too many attempts. Please wait a few minutes.");
-  const { orderNo, phone } = parsed.data;
-  const order = await OrderModel.findOne({ orderNo, $or: [{ "customer.phone": phone }, { "shippingAddress.phone": phone }] }).select("orderNo").lean();
-  if (!order) return fail("NOT_FOUND", "We couldn't find an order with this number and phone.");
+  const { orderNo, contact } = parsed.data;
+  // Phone (any format) or email, as used at checkout.
+  const match = contact.includes("@")
+    ? [{ "customer.email": contact.toLowerCase() }]
+    : [{ "customer.phone": normalizePhone(contact) }, { "shippingAddress.phone": normalizePhone(contact) }];
+  const order = await OrderModel.findOne({ orderNo, $or: match }).select("orderNo").lean();
+  if (!order) return fail("NOT_FOUND", "We couldn't find an order with this number and phone or email.");
   return ok({ next: `/order/${orderNo}?key=${orderKey(orderNo)}` });
 }

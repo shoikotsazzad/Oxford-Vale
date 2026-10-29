@@ -9,7 +9,7 @@ beforeAll(startDb);
 afterAll(stopDb);
 beforeEach(clearDb);
 
-const LEAD = { name: "Test Customer", phone: "01700000009", email: "test@example.com" };
+const LEAD = { name: "Test Customer", phone: "07700900009", email: "test@example.com" };
 
 describe("cart", () => {
   it("creates a cart on first add and prices it from the database", async () => {

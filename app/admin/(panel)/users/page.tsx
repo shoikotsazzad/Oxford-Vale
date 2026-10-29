@@ -32,7 +32,7 @@ async function Users({ searchParams }: PageProps<"/admin/users">) {
 
   return (
     <>
-      <PageHeader title="Admin users" text="Role changes and deactivation sign the person out everywhere." actions={!form && <Link href="/admin/users?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-white hover:bg-charcoal">Add admin</Link>} />
+      <PageHeader title="Admin users" text="Role changes and deactivation sign the person out everywhere." actions={!form && <Link href="/admin/users?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Add admin</Link>} />
       {form && (
         <div className="mb-6 grid gap-6 xl:grid-cols-[2fr_1fr]">
           <Card title={form.id ? `Edit ${form.name}` : "New admin user"}>

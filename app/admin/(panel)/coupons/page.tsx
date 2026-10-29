@@ -4,12 +4,13 @@ import { notFound } from "next/navigation";
 import { requireAdminPage } from "@/server/admin/guard";
 import { can } from "@/server/auth/rbac";
 import { CouponModel } from "@/models";
-import { formatBDT } from "@/lib/money";
+import { formatMoney, toDollars } from "@/lib/money";
+import { toLondonLocal } from "@/lib/dates";
 import { CouponForm, type CouponValue } from "@/components/admin/CatalogForms";
 import { Badge, Card, dateOnly, EmptyRow, PageHeader, ReadOnlyNote, Table, TableSkeleton, td, th } from "@/components/admin/ui";
 
 export const metadata = { title: "Coupons" };
-const local = (d?: Date | null) => (d ? new Date(d.getTime() + 6 * 3600_000).toISOString().slice(0, 16) : ""); // Dhaka datetime-local
+const local = (d?: Date | null) => (d ? toLondonLocal(d) : ""); // datetime-local in UK time
 
 export default function CouponsPage(props: PageProps<"/admin/coupons">) {
   return (
@@ -35,7 +36,9 @@ async function Coupons({ searchParams }: PageProps<"/admin/coupons">) {
     if (!c) notFound();
     usedCount = c.usedCount;
     form = {
-      id: String(c._id), code: c.code, description: c.description ?? "", type: c.type, value: c.value, maxDiscount: c.maxDiscount ?? "", minOrder: c.minOrder,
+      id: String(c._id), code: c.code, description: c.description ?? "", type: c.type,
+      // Amounts are stored in cents and edited in dollars.
+      value: c.type === "fixed" ? toDollars(c.value) : c.value, maxDiscount: c.maxDiscount ? toDollars(c.maxDiscount) : "", minOrder: toDollars(c.minOrder),
       startsAt: local(c.startsAt), expiresAt: local(c.expiresAt), usageLimit: c.usageLimit, perCustomerLimit: c.perCustomerLimit, isActive: c.isActive,
     };
   }
@@ -49,7 +52,7 @@ async function Coupons({ searchParams }: PageProps<"/admin/coupons">) {
 
   return (
     <>
-      <PageHeader title="Coupons" text="One coupon per order. Totals are always checked again on the server." actions={editable && !form && <Link href="/admin/coupons?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-white hover:bg-charcoal">Add coupon</Link>} />
+      <PageHeader title="Coupons" text="One coupon per order. Totals are always checked again on the server." actions={editable && !form && <Link href="/admin/coupons?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Add coupon</Link>} />
       {!editable && <ReadOnlyNote />}
       {form && (
         <Card title={form.id ? `Edit ${form.code}` : "New coupon"} className="mb-6">
@@ -64,8 +67,8 @@ async function Coupons({ searchParams }: PageProps<"/admin/coupons">) {
           {coupons.length ? coupons.map((c) => (
             <tr key={String(c._id)}>
               <td className={td}><span className="font-mono font-medium">{c.code}</span>{c.description && <p className="text-xs text-muted">{c.description}</p>}</td>
-              <td className={td}>{c.type === "percent" ? `${c.value}%${c.maxDiscount ? ` (max ${formatBDT(c.maxDiscount)})` : ""}` : formatBDT(c.value)}</td>
-              <td className={td}>{c.minOrder ? formatBDT(c.minOrder) : "—"}</td>
+              <td className={td}>{c.type === "percent" ? `${c.value}%${c.maxDiscount ? ` (max ${formatMoney(c.maxDiscount)})` : ""}` : formatMoney(c.value)}</td>
+              <td className={td}>{c.minOrder ? formatMoney(c.minOrder) : "—"}</td>
               <td className={`${td} tabular-nums`}>{c.usedCount}{c.usageLimit ? ` / ${c.usageLimit}` : ""}</td>
               <td className={td}>{dateOnly(c.expiresAt)}</td>
               <td className={td}>{state(c)}</td>

@@ -1,35 +1,39 @@
 "use client";
 import { useI18n } from "@/components/I18nProvider";
-import { SelectField, TextArea, TextField } from "@/components/ui/Field";
-import { districtsOf, divisions, upazilasOf } from "@/lib/bd-geo";
+import { SelectField, TextField } from "@/components/ui/Field";
+import { COUNTRIES, HOME_COUNTRY } from "@/lib/address";
 
-export type AddressValue = { name: string; phone: string; division: string; district: string; upazila: string; addressLine: string };
-export const emptyAddress: AddressValue = { name: "", phone: "", division: "", district: "", upazila: "", addressLine: "" };
+export type AddressValue = { name: string; phone: string; line1: string; line2: string; city: string; county: string; postcode: string; country: string };
+export const emptyAddress: AddressValue = { name: "", phone: "", line1: "", line2: "", city: "", county: "", postcode: "", country: HOME_COUNTRY };
 
-/** Recipient + Division → District → Upazila selects. Changing a level clears the levels below it. */
+/** Recipient and postal address. UK first: postcode is required (and checked) for UK addresses. */
 export function AddressFields({ value, onChange, errors = {}, prefix = "address" }: { value: AddressValue; onChange: (v: AddressValue) => void; errors?: Record<string, string>; prefix?: string }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const err = (k: keyof AddressValue) => errors[`${prefix}.${k}`];
   const set = (patch: Partial<AddressValue>) => onChange({ ...value, ...patch });
-  const label = (o: { name: string; bn?: string }) => (lang === "bn" && o.bn ? `${o.bn} (${o.name})` : o.name);
+  const uk = value.country === HOME_COUNTRY;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <TextField label={t.checkout.recipient} name={`${prefix}-name`} autoComplete="shipping name" value={value.name} onChange={(e) => set({ name: e.target.value })} error={err("name")} />
-      <TextField label={t.checkout.recipientPhone} name={`${prefix}-phone`} type="tel" inputMode="tel" autoComplete="shipping tel" placeholder="01XXXXXXXXX" value={value.phone} onChange={(e) => set({ phone: e.target.value })} error={err("phone")} />
-      <SelectField label={t.checkout.division} name={`${prefix}-division`} value={value.division} onChange={(e) => set({ division: e.target.value, district: "", upazila: "" })} error={err("division")}>
-        <option value="">{t.checkout.choose}</option>
-        {divisions.map((d) => <option key={d.name} value={d.name}>{label(d)}</option>)}
+      <TextField label={t.checkout.recipientPhone} name={`${prefix}-phone`} type="tel" inputMode="tel" autoComplete="shipping tel" placeholder="07700 900123" value={value.phone} onChange={(e) => set({ phone: e.target.value })} error={err("phone")} />
+      <SelectField label={t.checkout.country} name={`${prefix}-country`} autoComplete="shipping country" value={value.country} onChange={(e) => set({ country: e.target.value })} error={err("country")} className="sm:col-span-2">
+        {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
       </SelectField>
-      <SelectField label={t.checkout.district} name={`${prefix}-district`} value={value.district} disabled={!value.division} onChange={(e) => set({ district: e.target.value, upazila: "" })} error={err("district")}>
-        <option value="">{t.checkout.choose}</option>
-        {districtsOf(value.division).map((d) => <option key={d.name} value={d.name}>{label(d)}</option>)}
-      </SelectField>
-      <SelectField label={t.checkout.upazila} name={`${prefix}-upazila`} value={value.upazila} disabled={!value.district} onChange={(e) => set({ upazila: e.target.value })} error={err("upazila")} className="sm:col-span-2">
-        <option value="">{t.checkout.choose}</option>
-        {upazilasOf(value.division, value.district).map((u) => <option key={u.name} value={u.name}>{label(u)}</option>)}
-      </SelectField>
-      <TextArea label={t.checkout.addressLine} name={`${prefix}-addressLine`} rows={2} autoComplete="shipping street-address" hint={t.checkout.addressHint} value={value.addressLine} onChange={(e) => set({ addressLine: e.target.value })} error={err("addressLine")} className="sm:col-span-2" />
+      <TextField label={t.checkout.line1} name={`${prefix}-line1`} autoComplete="shipping address-line1" value={value.line1} onChange={(e) => set({ line1: e.target.value })} error={err("line1")} className="sm:col-span-2" />
+      <TextField label={t.checkout.line2} name={`${prefix}-line2`} autoComplete="shipping address-line2" value={value.line2} onChange={(e) => set({ line2: e.target.value })} error={err("line2")} className="sm:col-span-2" />
+      <TextField label={t.checkout.city} name={`${prefix}-city`} autoComplete="shipping address-level2" value={value.city} onChange={(e) => set({ city: e.target.value })} error={err("city")} />
+      <TextField label={uk ? t.checkout.county : t.checkout.region} name={`${prefix}-county`} autoComplete="shipping address-level1" value={value.county} onChange={(e) => set({ county: e.target.value })} error={err("county")} />
+      <TextField
+        label={uk ? t.checkout.postcode : t.checkout.postcodeIntl}
+        name={`${prefix}-postcode`}
+        autoComplete="shipping postal-code"
+        autoCapitalize="characters"
+        placeholder={uk ? "SW1A 1AA" : undefined}
+        value={value.postcode}
+        onChange={(e) => set({ postcode: e.target.value.toUpperCase() })}
+        error={err("postcode")}
+      />
     </div>
   );
 }

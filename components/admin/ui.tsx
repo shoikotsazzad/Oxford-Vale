@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { OrderStatus, PaymentStatus } from "@/models/enums";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 
-export const dateTime = (d: string | Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Dhaka" }).format(new Date(d));
-export const dateOnly = (d: string | Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "Asia/Dhaka" }).format(new Date(d));
+export const dateTime = (d: string | Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" }).format(new Date(d));
+export const dateOnly = (d: string | Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "Europe/London" }).format(new Date(d));
 export function ago(d: string | Date, now = Date.now()) {
   const m = Math.round((now - new Date(d).getTime()) / 60_000);
   if (m < 1) return "just now";
@@ -27,7 +27,7 @@ export function PageHeader({ title, text, actions }: { title: string; text?: str
 
 export function Card({ title, actions, children, className = "", pad = true }: { title?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string; pad?: boolean }) {
   return (
-    <section className={`min-w-0 rounded-lg border border-line bg-white ${className}`}>
+    <section className={`min-w-0 rounded-lg border border-line bg-surface ${className}`}>
       {title && (
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
           <h2 className="text-sm font-semibold">{title}</h2>
@@ -59,8 +59,7 @@ export const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).repla
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return <Badge tone={STATUS_TONE[status]}>{label(status)}</Badge>;
 }
-export function PaymentBadge({ status, awaiting }: { status: PaymentStatus; awaiting?: boolean }) {
-  if (awaiting) return <Badge tone="warn">Verify payment</Badge>;
+export function PaymentBadge({ status }: { status: PaymentStatus }) {
   const tone: Tone = status === "paid" ? "ok" : status === "failed" ? "bad" : "neutral";
   return <Badge tone={tone}>{label(status)}</Badge>;
 }
@@ -73,14 +72,14 @@ export function StatCard({ label: title, value, hint, href }: { label: string; v
       {hint && <p className="mt-1 text-sm text-muted">{hint}</p>}
     </>
   );
-  const cls = "block rounded-lg border border-line bg-white p-5";
+  const cls = "block rounded-lg border border-line bg-surface p-5";
   return href ? <Link href={href} className={`${cls} transition-colors hover:border-ink`}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 
 /** Table shell: horizontal scroll on small screens, consistent cell styles via the `th`/`td` classes below. */
 export function Table({ children, minWidth = "48rem" }: { children: React.ReactNode; minWidth?: string }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-white">
+    <div className="overflow-x-auto rounded-lg border border-line bg-surface">
       <table className="w-full text-left text-sm" style={{ minWidth }}>{children}</table>
     </div>
   );
@@ -99,7 +98,7 @@ export function EmptyRow({ cols, text }: { cols: number; text: string }) {
 /** Prev / next with "page x of y"; keeps the current filters. */
 export function AdminPagination({ page, pages, total, href }: { page: number; pages: number; total: number; href: (page: number) => string }) {
   if (pages <= 1) return <p className="mt-4 text-sm text-muted">{total} result{total === 1 ? "" : "s"}</p>;
-  const cell = "inline-flex h-10 min-w-10 items-center justify-center rounded-md border border-line bg-white px-3";
+  const cell = "inline-flex h-10 min-w-10 items-center justify-center rounded-md border border-line bg-surface px-3";
   return (
     <nav aria-label="Pagination" className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
       <p className="text-muted">{total} results · page {page} of {pages}</p>
@@ -122,14 +121,14 @@ export function listHref(path: string, params: Record<string, string | undefined
 /** GET filter form: plain HTML, so filters are shareable URLs and work without JavaScript. */
 export function FilterBar({ action, children }: { action: string; children: React.ReactNode }) {
   return (
-    <form action={action} className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-white p-4">
+    <form action={action} className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface p-4">
       {children}
-      <button type="submit" className="label h-10 rounded-md bg-ink px-4 text-white hover:bg-charcoal">Apply</button>
+      <button type="submit" className="label h-10 rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Apply</button>
       <Link href={action} className="label inline-flex h-10 items-center rounded-md px-3 text-muted hover:text-ink">Reset</Link>
     </form>
   );
 }
-export const filterInput = "mt-1 block h-10 rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-ink";
+export const filterInput = "mt-1 block h-10 rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-ink";
 export function Filter({ label: text, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block text-xs text-muted">

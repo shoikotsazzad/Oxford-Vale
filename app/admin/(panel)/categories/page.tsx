@@ -37,7 +37,7 @@ async function Categories({ searchParams }: PageProps<"/admin/categories">) {
 
   return (
     <>
-      <PageHeader title="Categories" text="Categories you can't delete: hide them instead (products keep their category)." actions={editable && !form && <Link href="/admin/categories?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-white hover:bg-charcoal">Add category</Link>} />
+      <PageHeader title="Categories" text="Categories you can't delete: hide them instead (products keep their category)." actions={editable && !form && <Link href="/admin/categories?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Add category</Link>} />
       {!editable && <ReadOnlyNote />}
       {form && (
         <Card title={form.id ? `Edit ${form.name}` : "New category"} className="mb-6">

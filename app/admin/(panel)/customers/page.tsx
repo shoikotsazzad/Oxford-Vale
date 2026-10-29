@@ -5,7 +5,7 @@ import { requireAdminPage } from "@/server/admin/guard";
 import { leadFilter, listCustomers, listLeads } from "@/server/services/admin-customers";
 import { runAbandonedSweep } from "@/server/services/abandoned";
 import { UserModel } from "@/models";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { telLink } from "@/lib/contact";
 import {
   AdminPagination, ago, Badge, dateTime, EmptyRow, Filter, FilterBar, filterInput, listHref, PageHeader, pageNum, Table, TableSkeleton, td, th, type Tone,
@@ -30,7 +30,7 @@ async function Customers({ searchParams }: PageProps<"/admin/customers">) {
   const one = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
   const tab = one("tab") === "leads" ? "leads" : "customers";
   const params = { tab: tab === "leads" ? "leads" : undefined, q: one("q"), status: one("status") };
-  const tabCls = (active: boolean) => `label inline-flex h-10 items-center rounded-md px-4 ${active ? "bg-ink text-white" : "border border-line bg-white hover:border-ink"}`;
+  const tabCls = (active: boolean) => `label inline-flex h-10 items-center rounded-md px-4 ${active ? "bg-ink text-paper" : "border border-line bg-surface hover:border-ink"}`;
   const accounts = await UserModel.countDocuments({ role: "customer" });
 
   return (
@@ -39,7 +39,7 @@ async function Customers({ searchParams }: PageProps<"/admin/customers">) {
         title="Customers & leads"
         text={`${accounts} registered account${accounts === 1 ? "" : "s"}. Customers are grouped by phone number, so guest orders are included.`}
         actions={
-          <a href={listHref(tab === "leads" ? "/api/admin/leads/export" : "/api/admin/customers/export", { q: params.q, status: params.status })} className="label inline-flex h-10 items-center rounded-md border border-ink px-4 hover:bg-ink hover:text-white">
+          <a href={listHref(tab === "leads" ? "/api/admin/leads/export" : "/api/admin/customers/export", { q: params.q, status: params.status })} className="label inline-flex h-10 items-center rounded-md border border-ink px-4 hover:bg-ink hover:text-paper">
             Export CSV
           </a>
         }
@@ -86,7 +86,7 @@ async function CustomerTable({ params, page: rawPage }: { params: Params; page?:
                 </td>
                 <td className={td}><a href={telLink(c.phone)} className="hover:underline">{c.phone}</a></td>
                 <td className={`${td} text-right tabular-nums`}><Link href={`/admin/orders?q=${c.phone}`} className="underline">{c.orders}</Link></td>
-                <td className={`${td} text-right tabular-nums`}>{formatBDT(c.spent)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMoney(c.spent)}</td>
                 <td className={td}>{dateTime(c.lastOrderAt)}</td>
               </tr>
             ))
@@ -147,14 +147,14 @@ async function LeadTable({ params, page: rawPage }: { params: Params; page?: str
                     <details>
                       <summary className="cursor-pointer">{l.cartSnapshot.reduce((n, i) => n + (i.qty ?? 0), 0)} item(s)</summary>
                       <ul className="mt-2 space-y-1 text-xs text-muted">
-                        {l.cartSnapshot.map((i, k) => <li key={k}>{i.qty} × {i.name} ({i.size}) · {formatBDT(i.unitPrice ?? 0)}</li>)}
+                        {l.cartSnapshot.map((i, k) => <li key={k}>{i.qty} × {i.name} ({i.size}) · {formatMoney(i.unitPrice ?? 0)}</li>)}
                       </ul>
                     </details>
                   ) : (
                     <span className="text-muted">Empty</span>
                   )}
                 </td>
-                <td className={`${td} text-right tabular-nums`}>{formatBDT(l.cartValue)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMoney(l.cartValue)}</td>
                 <td className={td}>
                   <Badge tone={LEAD_TONE[l.status]}>{LEAD_LABEL[l.status]}</Badge>
                   {l.order && <p className="mt-1 text-xs"><Link href={`/admin/orders/${l.order.orderNo}`} className="underline">{l.order.orderNo}</Link></p>}

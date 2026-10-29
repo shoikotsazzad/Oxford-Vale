@@ -1,5 +1,5 @@
 "use server";
-// Coupons, delivery zones, settings, admin users, messages.
+// Coupons, delivery options, settings, admin users, messages.
 import { adminAction, AdminError } from "@/server/admin/guard";
 import { revalidateStore } from "@/server/admin/revalidate";
 import { audit, diff } from "@/server/services/audit";
@@ -10,12 +10,11 @@ import { ok } from "@/server/result";
 import { rateLimit } from "@/server/rate-limit";
 import { sendTest } from "@/server/notifications";
 import { ContactMessageModel, CouponModel, DeliveryZoneModel, SettingModel, UserModel } from "@/models";
-import { divisions, DHAKA_CITY_AREAS } from "@/lib/bd-geo";
+import { isCountry } from "@/lib/address";
+import { londonLocalToDate } from "@/lib/dates";
 import { adminUserSchema, couponSchema, idSchema, messageStatusSchema, resetAdminPasswordSchema, settingsSchema, testNotificationSchema, zoneSchema } from "@/lib/validation/admin";
 
 const plain = <T,>(v: T) => (v ? JSON.parse(JSON.stringify(v)) : null);
-/** datetime-local values ("2026-10-22T18:00") are Dhaka time, whatever the server's time zone. */
-const dhakaDate = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s) ? `${s}+06:00` : s);
 
 export async function saveCoupon(input: unknown) {
   return adminAction("catalog.edit", couponSchema, input, async (d, admin) => {
@@ -23,8 +22,10 @@ export async function saveCoupon(input: unknown) {
     const fields = {
       ...rest,
       description: cleanText(rest.description),
-      startsAt: startsAt ? dhakaDate(startsAt) : undefined,
-      expiresAt: dhakaDate(expiresAt),
+      // Fixed coupons are typed in dollars; stored in cents like every amount.
+      value: rest.type === "fixed" ? Math.round(rest.value * 100) : rest.value,
+      startsAt: startsAt ? londonLocalToDate(startsAt) : undefined,
+      expiresAt: londonLocalToDate(expiresAt),
       maxDiscount: rest.type === "percent" ? maxDiscount : undefined,
     };
     const unset = Object.fromEntries((["startsAt", "maxDiscount"] as const).filter((k) => fields[k] === undefined).map((k) => [k, 1]));
@@ -39,24 +40,16 @@ export async function saveCoupon(input: unknown) {
   });
 }
 
-const DIVISIONS = new Set(divisions.map((d) => d.name));
-const DISTRICTS = new Set(divisions.flatMap((d) => d.districts.map((x) => x.name)));
-const AREAS = new Set([...divisions.flatMap((d) => d.districts.flatMap((x) => x.upazilas.map((u) => u.name))), ...DHAKA_CITY_AREAS]);
-
 export async function saveZone(input: unknown) {
   return adminAction("catalog.edit", zoneSchema, input, async (d, admin) => {
-    const unknown = [
-      ...d.divisions.filter((v) => !DIVISIONS.has(v)).map((v) => ["divisions", v]),
-      ...d.districts.filter((v) => !DISTRICTS.has(v)).map((v) => ["districts", v]),
-      ...d.areas.filter((v) => !AREAS.has(v)).map((v) => ["areas", v]),
-    ];
-    if (unknown.length) throw new AdminError("VALIDATION", "Some places aren't recognised.", Object.fromEntries(unknown.map(([f, v]) => [f, `Unknown: ${v}`])));
-    const { id, divisions: dv, districts, areas, ...rest } = d;
-    const fields = { ...rest, name: cleanText(rest.name), match: { divisions: dv, districts, areas } };
+    const unknown = d.countries.filter((c) => !isCountry(c));
+    if (unknown.length) throw new AdminError("VALIDATION", "Some country codes aren't recognised.", { countries: `Unknown: ${unknown.join(", ")}` });
+    const { id, ...rest } = d;
+    const fields = { ...rest, name: cleanText(rest.name), note: cleanText(rest.note), countries: [...new Set(rest.countries)] };
     const before = id ? await DeliveryZoneModel.findById(id).lean() : null;
     const saved = id ? await DeliveryZoneModel.findByIdAndUpdate(id, fields, { returnDocument: "after" }).lean() : (await DeliveryZoneModel.create(fields)).toObject();
-    if (!saved) throw new AdminError("NOT_FOUND", "Zone not found.");
-    await audit(admin, id ? "zone.update" : "zone.create", { type: "zone", id: String(saved._id), label: saved.name }, diff(plain(before), plain(fields), ["name", "fee", "etaMinDays", "etaMaxDays", "match", "sortOrder", "isActive"]));
+    if (!saved) throw new AdminError("NOT_FOUND", "Delivery option not found.");
+    await audit(admin, id ? "zone.update" : "zone.create", { type: "zone", id: String(saved._id), label: saved.name }, diff(plain(before), plain(fields), ["name", "fee", "etaMinDays", "etaMaxDays", "countries", "freeEligible", "note", "sortOrder", "isActive"]));
     revalidateStore("zones");
     return ok({ id: String(saved._id) });
   });
@@ -65,9 +58,9 @@ export async function saveZone(input: unknown) {
 export async function deleteZone(input: unknown) {
   return adminAction("catalog.edit", idSchema, input, async (d, admin) => {
     const zone = await DeliveryZoneModel.findById(d.id).lean();
-    if (!zone) throw new AdminError("NOT_FOUND", "Zone not found.");
-    const fallbacks = await DeliveryZoneModel.countDocuments({ isActive: true, "match.divisions.0": { $exists: false }, "match.districts.0": { $exists: false }, "match.areas.0": { $exists: false }, _id: { $ne: d.id } });
-    if (!fallbacks) throw new AdminError("CONFLICT", "Keep at least one active zone with no rules: it covers every address no other zone matches.");
+    if (!zone) throw new AdminError("NOT_FOUND", "Delivery option not found.");
+    const fallbacks = await DeliveryZoneModel.countDocuments({ isActive: true, "countries.0": { $exists: false }, _id: { $ne: d.id } });
+    if (!fallbacks) throw new AdminError("CONFLICT", "Keep at least one active option with no countries: it covers every country no other option lists.");
     await DeliveryZoneModel.deleteOne({ _id: d.id });
     await audit(admin, "zone.delete", { type: "zone", id: d.id, label: zone.name });
     revalidateStore("zones");
@@ -131,11 +124,11 @@ export async function resetAdminPassword(input: unknown) {
 export async function sendTestNotification(input: unknown) {
   return adminAction("settings", testNotificationSchema, input, async (d, admin) => {
     if (!(await rateLimit(`notify-test:${admin.id}`, 10, 3600))) throw new AdminError("FORBIDDEN", "Too many test messages. Try again in an hour.");
-    const delivered = await sendTest(d.channel, d.to);
+    const delivered = await sendTest(d.to);
     await audit(admin, "notification.test", { type: "notification", id: d.channel, label: d.to });
     revalidateStore();
-    if (!delivered) throw new AdminError("CONFLICT", `The ${d.channel === "email" ? "email" : "SMS"} provider returned an error. See the details under Messages → Sent emails & SMS.`);
-    return ok({ provider: d.channel === "email" ? process.env.EMAIL_PROVIDER || "log" : process.env.SMS_PROVIDER || "log" });
+    if (!delivered) throw new AdminError("CONFLICT", "The email provider returned an error. See the details under Messages → Sent emails.");
+    return ok({ provider: process.env.EMAIL_PROVIDER || "log" });
   });
 }
 

@@ -6,7 +6,7 @@ import { getSettings } from "@/server/services/settings";
 import { getOrderView } from "@/server/services/order-view";
 import { verifyOrderKey } from "@/server/crypto";
 import { buildMetadata } from "@/lib/seo";
-import { whatsappLink } from "@/lib/contact";
+import { mailtoLink } from "@/lib/contact";
 import { Container } from "@/components/Container";
 import { ButtonLink } from "@/components/ui/Button";
 import { CheckIcon } from "@/components/ui/icons";
@@ -41,19 +41,23 @@ async function OrderContent({ params, searchParams }: PageProps<"/order/[orderNo
     );
   }
 
-  const banner = sp.paid ? { title: t.order.paidTitle, text: t.order.paidText } : sp.submitted ? { title: t.order.submittedTitle, text: t.order.submittedText } : sp.placed ? { title: t.order.thanks, text: t.order.thanksText } : null;
-  const needsPayment = order.status === "pending" && order.paymentStatus !== "paid" && order.paymentMethod !== "cod" && !order.awaitingVerification;
+  const banner = sp.paid
+    ? { title: t.order.paidTitle, text: t.order.paidText }
+    : sp.processing && order.paymentStatus !== "paid"
+      ? { title: t.order.processingTitle, text: t.order.processingText }
+      : null;
+  const needsPayment = order.status === "pending" && order.paymentStatus !== "paid";
   const keyParam = key ? `?key=${key}` : "";
 
   return (
     <Container className="py-8 md:py-12">
       {banner && (
-        <div className="mb-8 flex gap-4 rounded-lg bg-ink p-5 text-white md:p-6" role="status">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10"><CheckIcon /></span>
-          <div><p className="font-serif text-2xl">{banner.title}</p><p className="mt-1 text-sm text-white/75">{banner.text}</p></div>
+        <div className="mb-8 flex gap-4 rounded-lg bg-ink p-5 text-paper md:p-6" role="status">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper/10"><CheckIcon /></span>
+          <div><p className="font-serif text-2xl">{banner.title}</p><p className="mt-1 text-sm text-paper/75">{banner.text}</p></div>
         </div>
       )}
-      <p className="label text-muted">{t.order.placedOn} {new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Asia/Dhaka" }).format(new Date(order.createdAt))}</p>
+      <p className="label text-muted">{t.order.placedOn} {new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Europe/London" }).format(new Date(order.createdAt))}</p>
       <h1 className="mt-2 font-serif text-4xl md:text-5xl">{t.order.title} {order.orderNo}</h1>
       <div className="mt-8">
         <OrderDetails
@@ -65,7 +69,7 @@ async function OrderContent({ params, searchParams }: PageProps<"/order/[orderNo
               orderKey={key}
               canCancel={order.status === "pending"}
               payHref={needsPayment ? `/checkout/pay/${order.orderNo}${keyParam}` : undefined}
-              whatsappHref={whatsappLink(settings.contact.whatsapp, `Hello ${settings.storeName}, I have a question about my order ${order.orderNo}.`)}
+              contactHref={mailtoLink(settings.contact.supportEmail || settings.contact.email, `Order ${order.orderNo}`)}
             />
           }
         />

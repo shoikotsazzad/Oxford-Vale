@@ -4,11 +4,11 @@ import {
   ContactMessageModel, CouponModel, DeliveryZoneModel, LeadModel, OrderModel, ProductModel, VariantModel, type OrderStatus, type PaymentMethod, type PaymentStatus,
 } from "@/models";
 import { nextOrderNo } from "@/server/services/order";
-import { resolveZone } from "@/server/services/zone-match";
+import { optionsFor } from "@/server/services/zone-match";
 import { computeTotals, unitPriceOf } from "@/server/services/pricing";
 import { restoreOrderStock } from "@/server/services/stock";
 import { syncProductSummary } from "@/server/services/catalog-sync";
-import { DHAKA_CITY_AREAS, divisions } from "@/lib/bd-geo";
+import { HOME_COUNTRY } from "@/lib/address";
 import type { Types } from "mongoose";
 
 export const DEMO_DOMAIN = "demo.oxfordvale.example";
@@ -22,8 +22,27 @@ function rng(seed: number) {
   };
 }
 
-const FIRST = ["Arif", "Tanvir", "Rafiq", "Imran", "Sabbir", "Nayeem", "Fahim", "Shakil", "Mahmud", "Rakib", "Zubair", "Asif", "Sajid", "Rezaul", "Kamrul", "Hasib"];
-const LAST = ["Rahman", "Hossain", "Ahmed", "Chowdhury", "Islam", "Karim", "Uddin", "Haque", "Sarkar", "Talukder"];
+// Fictional customers. Phone numbers come from Ofcom's ranges reserved for drama (07700 900xxx, 020 7946 0xxx).
+const FIRST = ["James", "Oliver", "Harry", "Thomas", "William", "Arjun", "Daniel", "Samuel", "Edward", "Henry", "Omar", "George", "Callum", "Rhys", "Finlay", "Luca"];
+const LAST = ["Clarke", "Hughes", "Turner", "Bennett", "Patel", "Walker", "Wright", "Evans", "Shaw", "Fletcher", "Morgan", "Reid"];
+// Made-up streets in real towns; postcodes are valid in format only.
+const UK_PLACES = [
+  { city: "London", county: "", postcodes: ["SW3 4RP", "N1 7GU", "SE10 9JL", "W11 2BQ", "EC1V 4PW"] },
+  { city: "Manchester", county: "Greater Manchester", postcodes: ["M2 4WU", "M20 2RN"] },
+  { city: "Edinburgh", county: "", postcodes: ["EH3 6SS", "EH10 4BF"] },
+  { city: "Bristol", county: "", postcodes: ["BS8 1TH", "BS6 5QA"] },
+  { city: "Leeds", county: "West Yorkshire", postcodes: ["LS1 5DL", "LS6 2AB"] },
+  { city: "Oxford", county: "Oxfordshire", postcodes: ["OX2 6HT", "OX4 1EH"] },
+  { city: "Cardiff", county: "", postcodes: ["CF10 1EP", "CF24 4HQ"] },
+  { city: "Bath", county: "Somerset", postcodes: ["BA1 2QH"] },
+];
+const ABROAD = [
+  { city: "Paris", county: "", postcode: "75007", country: "FR" },
+  { city: "Dublin", county: "", postcode: "D02 X285", country: "IE" },
+  { city: "Berlin", county: "", postcode: "10117", country: "DE" },
+  { city: "New York", county: "NY", postcode: "10014", country: "US" },
+];
+const STREETS = ["Hartley Road", "Kingsway Gardens", "Elm Grove", "Ashford Place", "Chester Terrace", "Mill Lane", "Abbey Close", "Rosebery Avenue"];
 
 // Status mix for 30 days of orders: older orders are further along.
 function lifecycle(ageDays: number, r: number): OrderStatus {
@@ -57,21 +76,23 @@ export async function seedDemo(count = 48) {
 
   const zones = (await DeliveryZoneModel.find({ isActive: true }).sort({ sortOrder: 1 }).lean()).map((z) => ({
     id: String(z._id), name: z.name, fee: z.fee, etaMinDays: z.etaMinDays, etaMaxDays: z.etaMaxDays,
-    match: { divisions: z.match?.divisions ?? [], districts: z.match?.districts ?? [], areas: z.match?.areas ?? [] },
+    countries: z.countries ?? [], freeEligible: Boolean(z.freeEligible),
   }));
   const products = await ProductModel.find({ status: "active", inStock: true }).select("name slug price salePrice images").lean();
-  if (!products.length || !zones.length) throw new Error("Seed the catalog and delivery zones first (npm run seed).");
+  if (!products.length || !zones.length) throw new Error("Seed the catalog and delivery options first (npm run seed).");
   const variants = await VariantModel.find({ product: { $in: products.map((p) => p._id) }, isActive: true, stock: { $gte: 3 } }).lean();
   const byProduct = new Map(products.map((p) => [String(p._id), p]));
 
   const address = () => {
-    const r = random();
-    if (r < 0.45) return { division: "Dhaka", district: "Dhaka", upazila: pick(DHAKA_CITY_AREAS) };
-    if (r < 0.6) return { division: "Dhaka", district: pick(["Gazipur", "Narayanganj"]), upazila: "" };
-    if (r < 0.75) return { division: "Chattogram", district: "Chattogram", upazila: "" };
-    const div = pick(divisions);
-    return { division: div.name, district: pick(div.districts).name, upazila: "" };
+    const line1 = `${1 + Math.floor(random() * 120)} ${pick(STREETS)}`;
+    if (random() < 0.88) {
+      const place = pick(UK_PLACES);
+      return { line1, line2: "", city: place.city, county: place.county, postcode: pick(place.postcodes), country: HOME_COUNTRY };
+    }
+    const place = pick(ABROAD);
+    return { line1, line2: "", city: place.city, county: place.county, postcode: place.postcode, country: place.country };
   };
+  const ukPhone = () => (random() < 0.8 ? `07700900${String(Math.floor(random() * 1000)).padStart(3, "0")}` : `0207946${String(Math.floor(random() * 1000)).padStart(4, "0")}`);
 
   const now = Date.now();
   const touched = new Set<string>();
@@ -80,11 +101,11 @@ export async function seedDemo(count = 48) {
     const ageDays = Math.pow(random(), 1.4) * 30; // more recent orders than old ones
     const createdAt = new Date(now - ageDays * 864e5);
     const name = `${pick(FIRST)} ${pick(LAST)}`;
-    const phone = `019${String(10_000_000 + Math.floor(random() * 89_999_999)).slice(0, 8)}`;
+    const phone = ukPhone();
     const email = `${name.toLowerCase().replace(/\s+/g, ".")}.${n}@${DEMO_DOMAIN}`;
     const area = address();
-    if (!area.upazila) area.upazila = pick(divisions.find((d) => d.name === area.division)!.districts.find((d) => d.name === area.district)!.upazilas).name;
-    const zone = resolveZone(zones, area)!;
+    const options = optionsFor(zones, area.country);
+    const zone = area.country === HOME_COUNTRY && options.length > 1 && random() < 0.2 ? options[1] : options[0]; // most UK orders go standard
 
     const status = lifecycle(ageDays, random());
     const lineCount = 1 + Math.floor(random() * random() * 3);
@@ -101,23 +122,25 @@ export async function seedDemo(count = 48) {
       lines.push({ product: p._id, variant: v._id, sku: v.sku, name: p.name, size: v.size, colour: v.colour, image, regularPrice: v.priceOverride ?? p.price, unitPrice, qty, lineTotal: unitPrice * qty });
     }
     const coupon = random() < 0.15 ? await CouponModel.findOne({ code: "WELCOME10" }).lean() : null;
-    const totals = computeTotals({ lines, coupon: coupon && lines.reduce((s, l) => s + l.lineTotal, 0) >= coupon.minOrder ? coupon : null, deliveryFee: zone.fee, freeDeliveryThreshold: 10_000 });
+    const totals = computeTotals({ lines, coupon: coupon && lines.reduce((s, l) => s + l.lineTotal, 0) >= coupon.minOrder ? coupon : null, deliveryFee: zone.fee, freeDeliveryThreshold: zone.freeEligible ? 12_500 : 0 });
 
     if (!lines.length) continue;
     const r = random();
-    const paymentMethod: PaymentMethod = r < 0.6 ? "cod" : r < 0.8 ? "sslcommerz" : r < 0.93 ? "bkash" : "nagad";
+    const paymentMethod: PaymentMethod = r < 0.75 ? "stripe" : "paypal";
     const reached = status === "cancelled" ? 0 : status === "returned" ? 4 : PATH.indexOf(status);
-    let paymentStatus: PaymentStatus = "unpaid";
-    const payment: Record<string, unknown> = {};
-    if (paymentMethod === "sslcommerz" && status !== "cancelled") Object.assign(payment, { gatewayTranId: `DEMO${n}${Math.floor(random() * 1e6)}`, valId: `DEMOVAL${n}` });
-    if (paymentMethod === "bkash" || paymentMethod === "nagad") Object.assign(payment, { trxId: `DEMO${(n * 7919).toString(36).toUpperCase()}X`, senderNumber: phone, submittedAt: new Date(createdAt.getTime() + 15 * 60_000) });
-    if (paymentMethod === "sslcommerz" && status !== "cancelled") paymentStatus = "paid";
-    if ((paymentMethod === "bkash" || paymentMethod === "nagad") && status !== "pending" && status !== "cancelled") paymentStatus = "paid";
-    if (paymentMethod === "cod" && (status === "delivered" || status === "returned")) paymentStatus = "paid";
+    // Online payment: everything past "pending" is paid; a pending order is a checkout that wasn't paid (yet).
+    const paid = status !== "cancelled" && status !== "pending";
+    const paymentStatus: PaymentStatus = paid ? "paid" : status === "pending" && random() < 0.3 ? "failed" : "unpaid";
+    const brands = paymentMethod === "paypal" ? ["PayPal"] : ["card (visa)", "card (mastercard)", "card (amex)", "apple_pay", "klarna"];
+    const payment: Record<string, unknown> = paid
+      ? { sessionId: `demo_${n}`, gatewayTranId: `${paymentMethod === "stripe" ? "pi_demo" : "PAYDEMO"}${(n * 7919).toString(36).toUpperCase()}`, brand: pick(brands), verifiedAt: new Date(createdAt.getTime() + 2 * 60_000) }
+      : {};
+    const courier = area.country === HOME_COUNTRY ? (zone.etaMaxDays <= 1 ? "DPD" : "Royal Mail") : "DHL Express";
 
     const step = (i: number) => new Date(createdAt.getTime() + i * Math.min(ageDays / 5, 1.2) * 864e5);
     const history = [{ status: "pending" as OrderStatus, at: createdAt, note: "Order placed" }];
-    for (let i = 1; i <= reached; i++) history.push({ status: PATH[i], at: step(i), note: i === 3 ? "Shipped with Pathao" : "" });
+    if (paid) history.push({ status: "confirmed", at: new Date(createdAt.getTime() + 2 * 60_000), note: `Paid online via ${paymentMethod === "stripe" ? "Stripe" : "PayPal"} (${payment.brand})` });
+    for (let i = paid ? 2 : 1; i <= reached; i++) history.push({ status: PATH[i], at: step(i), note: i === 3 ? `Shipped with ${courier}` : "" });
     if (status === "cancelled") history.push({ status: "cancelled", at: step(0.3), note: "Customer asked to cancel" });
     if (status === "returned") history.push({ status: "returned", at: step(5), note: "Wrong size, returned" });
 
@@ -127,7 +150,7 @@ export async function seedDemo(count = 48) {
     const order = await OrderModel.create({
       orderNo: await nextOrderNo(createdAt),
       customer: { name, phone, email },
-      shippingAddress: { name, phone, ...area, addressLine: `House ${1 + Math.floor(random() * 80)}, Road ${1 + Math.floor(random() * 30)}` },
+      shippingAddress: { name, phone, ...area },
       items: lines,
       subtotal: totals.subtotal,
       couponCode: totals.discount ? coupon?.code : undefined,
@@ -139,7 +162,7 @@ export async function seedDemo(count = 48) {
       payment,
       status,
       statusHistory: history,
-      ...(reached >= 3 && { shipment: { courier: "Pathao", trackingNo: `PTH${100000 + n}` } }),
+      ...(reached >= 3 && { shipment: { courier, trackingNo: `${courier === "Royal Mail" ? "RM" : courier === "DPD" ? "DPD" : "DHL"}${100000 + n}GB` } }),
       ...(status === "cancelled" && { cancelledBy: "customer", stockRestoredAt: step(0.3) }),
       ...(status === "returned" && { stockRestoredAt: step(5) }),
       createdAt,
@@ -166,7 +189,7 @@ export async function seedDemo(count = 48) {
     const unitPrice = unitPriceOf(p, v);
     const name = `${pick(FIRST)} ${pick(LAST)}`;
     await LeadModel.create({
-      name, phone: `018${String(10_000_000 + Math.floor(random() * 89_999_999)).slice(0, 8)}`, email: `${name.toLowerCase().replace(/\s+/g, ".")}.lead${n}@${DEMO_DOMAIN}`,
+      name, phone: ukPhone(), email: `${name.toLowerCase().replace(/\s+/g, ".")}.lead${n}@${DEMO_DOMAIN}`,
       source: "add_to_cart", status: minutesAgo > 60 ? "abandoned" : "cart", abandonedAt: minutesAgo > 60 ? new Date(at.getTime() + 60 * 60_000) : undefined,
       cartSnapshot: [{ name: p.name, sku: v.sku, size: v.size, colour: v.colour, qty: 1, unitPrice }], cartValue: unitPrice, lastActivityAt: at, createdAt: at,
     });

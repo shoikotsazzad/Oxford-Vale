@@ -12,7 +12,7 @@ const defaults: StoreSettings = {
   storeName: site.name,
   tagline: site.tagline,
   legal: site.legal,
-  contact: { phone: site.phoneDisplay, whatsapp: site.whatsappDisplay, email: site.email, supportEmail: site.supportEmail, ordersEmail: site.ordersEmail },
+  contact: { phone: site.phoneDisplay, freephone: site.freephoneDisplay, email: site.email, supportEmail: site.supportEmail, ordersEmail: site.ordersEmail },
   address: site.address,
   hours: site.hoursText,
   socials: site.socials,
@@ -22,7 +22,7 @@ const defaults: StoreSettings = {
   freeDeliveryThreshold: site.freeDeliveryThreshold,
   abandonedAfterMinutes: site.abandonedAfterMinutes,
   lowStockThreshold: site.lowStockThreshold,
-  payments: { cod: true, sslcommerz: true, bkash: { enabled: true, number: site.payments.bkashNumber }, nagad: { enabled: true, number: site.payments.nagadNumber } },
+  payments: { stripe: true, paypal: true },
   bank: site.bank,
   invoiceFooter: site.invoiceFooter,
 };

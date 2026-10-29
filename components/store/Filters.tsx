@@ -5,7 +5,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { CheckIcon, CloseIcon, FilterIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { withParams } from "@/lib/filters";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { isLight } from "@/lib/colours";
 import type { ProductListResult, SortKey } from "@/lib/types";
 import { SORT_KEYS } from "@/lib/types";
@@ -27,8 +27,9 @@ const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x
 
 function FilterGroups({ facets, active, update }: { facets: Facets; active: Active; update: (c: Record<string, string | string[] | null>) => void }) {
   const { t } = useI18n();
-  const [min, setMin] = useState(active.min?.toString() ?? "");
-  const [max, setMax] = useState(active.max?.toString() ?? "");
+  // Inputs and the URL are in whole dollars; active.min / max are cents.
+  const [min, setMin] = useState(active.min !== undefined ? String(active.min / 100) : "");
+  const [max, setMax] = useState(active.max !== undefined ? String(active.max / 100) : "");
   return (
     <div className="space-y-8">
       {facets.sizes.length > 1 && (
@@ -39,7 +40,7 @@ function FilterGroups({ facets, active, update }: { facets: Facets; active: Acti
               const on = active.sizes.includes(s);
               return (
                 <button key={s} type="button" aria-pressed={on} onClick={() => update({ size: toggle(active.sizes, s) })}
-                  className={`min-h-10 min-w-11 rounded-md border px-3 text-sm transition-colors ${on ? "border-ink bg-ink text-white" : "border-line bg-white/60 hover:border-ink"}`}>
+                  className={`min-h-10 min-w-11 rounded-md border px-3 text-sm transition-colors ${on ? "border-ink bg-ink text-paper" : "border-line bg-surface/60 hover:border-ink"}`}>
                   {s}
                 </button>
               );
@@ -58,7 +59,7 @@ function FilterGroups({ facets, active, update }: { facets: Facets; active: Acti
                 <li key={c.name}>
                   <button type="button" aria-pressed={on} onClick={() => update({ colour: toggle(active.colours, c.name) })} className="flex min-h-10 w-full items-center gap-3 text-left text-sm">
                     <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${on ? "border-ink ring-2 ring-ink ring-offset-2 ring-offset-paper" : "border-ink/20"}`} style={{ background: c.hex }}>
-                      {on && <CheckIcon size={12} className={isLight(c.hex) ? "text-ink" : "text-white"} />}
+                      {on && <CheckIcon size={12} className={isLight(c.hex) ? "text-night" : "text-white"} />}
                     </span>
                     {c.name}
                   </button>
@@ -71,7 +72,7 @@ function FilterGroups({ facets, active, update }: { facets: Facets; active: Acti
 
       <fieldset>
         <legend className="label">{t.listing.price}</legend>
-        <p className="mt-1 text-xs text-muted">{formatBDT(facets.minPrice)} – {formatBDT(facets.maxPrice)}</p>
+        <p className="mt-1 text-xs text-muted">{formatMoney(facets.minPrice)} – {formatMoney(facets.maxPrice)}</p>
         <form
           className="mt-3 flex items-end gap-2"
           onSubmit={(e) => {
@@ -81,11 +82,11 @@ function FilterGroups({ facets, active, update }: { facets: Facets; active: Acti
         >
           <label className="flex-1 text-xs text-muted">
             {t.listing.min}
-            <input inputMode="numeric" pattern="[0-9]*" value={min} onChange={(e) => setMin(e.target.value.replace(/\D/g, ""))} placeholder="৳" className="mt-1 block min-h-10 w-full rounded-md border border-line bg-white px-2 text-sm text-ink" />
+            <input inputMode="numeric" pattern="[0-9]*" value={min} onChange={(e) => setMin(e.target.value.replace(/\D/g, ""))} placeholder="$" className="mt-1 block min-h-10 w-full rounded-md border border-line bg-surface px-2 text-sm text-ink" />
           </label>
           <label className="flex-1 text-xs text-muted">
             {t.listing.max}
-            <input inputMode="numeric" pattern="[0-9]*" value={max} onChange={(e) => setMax(e.target.value.replace(/\D/g, ""))} placeholder="৳" className="mt-1 block min-h-10 w-full rounded-md border border-line bg-white px-2 text-sm text-ink" />
+            <input inputMode="numeric" pattern="[0-9]*" value={max} onChange={(e) => setMax(e.target.value.replace(/\D/g, ""))} placeholder="$" className="mt-1 block min-h-10 w-full rounded-md border border-line bg-surface px-2 text-sm text-ink" />
           </label>
           <button type="submit" className="label min-h-10 rounded-md border border-ink px-3">OK</button>
         </form>
@@ -124,7 +125,7 @@ export function Filters({ facets, active }: { facets: Facets; active: Active }) 
       </button>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t.listing.filters}>
-          <div className="absolute inset-0 bg-ink/40" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col bg-paper">
             <div className="flex h-16 items-center justify-between border-b border-line px-4">
               <p className="font-serif text-xl">{t.listing.filters}</p>
@@ -154,7 +155,7 @@ export function SortSelect({ value }: { value: SortKey }) {
         value={value}
         disabled={pending}
         onChange={(e) => update({ sort: e.target.value === "featured" ? null : e.target.value })}
-        className="min-h-11 rounded-md border border-line bg-white/60 px-3 text-sm"
+        className="min-h-11 rounded-md border border-line bg-surface/60 px-3 text-sm"
         aria-label={t.listing.sort}
       >
         {SORT_KEYS.map((k) => <option key={k} value={k}>{t.listing.sorts[k]}</option>)}
@@ -170,7 +171,7 @@ export function ActiveFilterChips({ active }: { active: Active }) {
     ...active.sizes.map((s) => ({ label: `${t.listing.size}: ${s}`, onRemove: () => update({ size: active.sizes.filter((x) => x !== s) }) })),
     ...active.colours.map((c) => ({ label: c, onRemove: () => update({ colour: active.colours.filter((x) => x !== c) }) })),
     ...(active.min !== undefined || active.max !== undefined
-      ? [{ label: `${active.min !== undefined ? formatBDT(active.min) : "৳0"} – ${active.max !== undefined ? formatBDT(active.max) : "∞"}`, onRemove: () => update({ min: null, max: null }) }]
+      ? [{ label: `${active.min !== undefined ? formatMoney(active.min) : "$0"} – ${active.max !== undefined ? formatMoney(active.max) : "∞"}`, onRemove: () => update({ min: null, max: null }) }]
       : []),
   ];
   if (!chips.length) return null;
@@ -178,7 +179,7 @@ export function ActiveFilterChips({ active }: { active: Active }) {
     <ul className="flex flex-wrap gap-2">
       {chips.map((c) => (
         <li key={c.label}>
-          <button type="button" onClick={c.onRemove} className="flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-white/60 px-3 text-xs hover:border-ink">
+          <button type="button" onClick={c.onRemove} className="flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-surface/60 px-3 text-xs hover:border-ink">
             {c.label} <CloseIcon size={12} />
           </button>
         </li>

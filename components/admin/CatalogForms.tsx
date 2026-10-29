@@ -1,5 +1,5 @@
 "use client";
-// Category, collection, coupon and delivery-zone editors. Each saves via its admin action and returns to the list.
+// Category, collection, coupon and delivery-option editors. Each saves via its admin action and returns to the list.
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -7,7 +7,7 @@ import { Checkbox, SelectField, TextArea, TextField } from "@/components/ui/Fiel
 import { ChevronDownIcon, CloseIcon } from "@/components/ui/icons";
 import { saveCategory, saveCollection } from "@/server/actions/admin/catalog";
 import { deleteZone, saveCoupon, saveZone } from "@/server/actions/admin/store";
-import { divisions, DHAKA_CITY_AREAS } from "@/lib/bd-geo";
+import { COUNTRIES, countryName, EUROPE, HOME_COUNTRY } from "@/lib/address";
 import type { Result } from "@/server/result";
 import { FormStatus, useAdminAction } from "./useAdminAction";
 
@@ -103,7 +103,7 @@ export function CollectionForm({ initial, products }: { initial: CollectionValue
         <div className="relative">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products to add…" aria-label="Search products to add" className="h-11 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-ink" />
           {matches.length > 0 && (
-            <ul className="absolute inset-x-0 top-12 z-10 max-h-72 overflow-auto rounded-md border border-line bg-white shadow-lg">
+            <ul className="absolute inset-x-0 top-12 z-10 max-h-72 overflow-auto rounded-md border border-line bg-surface shadow-lg">
               {matches.map((p) => (
                 <li key={p.id}>
                   <button type="button" onClick={() => { set("products", [...v.products, p.id]); setQ(""); }} className="flex w-full justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-paper">
@@ -150,15 +150,15 @@ export function CouponForm({ initial, usedCount }: { initial: CouponValue; usedC
       <div className="grid gap-4 sm:grid-cols-3">
         <SelectField label="Type" name="type" value={v.type} onChange={(e) => set("type", e.target.value as CouponValue["type"])}>
           <option value="percent">Percent off</option>
-          <option value="fixed">Fixed taka off</option>
+          <option value="fixed">Fixed amount off</option>
         </SelectField>
-        <TextField label={v.type === "percent" ? "Percent" : "Amount (৳)"} type="number" min={0} {...t("value")} />
-        {v.type === "percent" && <TextField label="Max discount (৳)" type="number" min={0} {...t("maxDiscount")} hint="Optional cap" />}
+        <TextField label={v.type === "percent" ? "Percent" : "Amount ($)"} type="number" min={0} {...t("value")} />
+        {v.type === "percent" && <TextField label="Max discount ($)" type="number" min={0} {...t("maxDiscount")} hint="Optional cap" />}
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <TextField label="Minimum order (৳)" type="number" min={0} {...t("minOrder")} />
+        <TextField label="Minimum order ($)" type="number" min={0} {...t("minOrder")} />
         <TextField label="Total uses" type="number" min={0} {...t("usageLimit")} hint={`0 = unlimited · used ${usedCount}`} />
-        <TextField label="Uses per customer" type="number" min={0} {...t("perCustomerLimit")} hint="0 = unlimited · by phone" />
+        <TextField label="Uses per customer" type="number" min={0} {...t("perCustomerLimit")} hint="0 = unlimited · by phone number" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField label="Starts (optional)" type="datetime-local" {...t("startsAt")} />
@@ -171,27 +171,26 @@ export function CouponForm({ initial, usedCount }: { initial: CouponValue; usedC
   );
 }
 
-export type ZoneValue = { id?: string; name: string; fee: number | string; etaMinDays: number | string; etaMaxDays: number | string; divisions: string[]; districts: string[]; areas: string[]; sortOrder: number | string; isActive: boolean };
+/** Amounts are shown in dollars here; the server stores cents. */
+export type ZoneValue = { id?: string; name: string; fee: number | string; etaMinDays: number | string; etaMaxDays: number | string; countries: string[]; freeEligible: boolean; note: string; sortOrder: number | string; isActive: boolean };
 
-const ALL_DISTRICTS = divisions.flatMap((d) => d.districts.map((x) => x.name)).sort();
-const ALL_AREAS = [...new Set([...DHAKA_CITY_AREAS, ...divisions.flatMap((d) => d.districts.flatMap((x) => x.upazilas.map((u) => u.name)))])].sort();
+const CODES = COUNTRIES.map((c) => c.code);
 
-/** Comma-separated list with suggestions; unknown names are rejected by the server. */
-function PlaceList({ label, name, value, options, onChange, error }: { label: string; name: string; value: string[]; options: string[]; onChange: (v: string[]) => void; error?: string }) {
+/** Country codes with suggestions ("GB", "France", "fr" all work); unknown codes are rejected by the server. */
+function CountryList({ value, onChange, error }: { value: string[]; onChange: (v: string[]) => void; error?: string }) {
   const [draft, setDraft] = useState("");
   const add = (raw: string) => {
-    const names = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    const next = [...new Set([...value, ...names.map((n) => options.find((o) => o.toLowerCase() === n.toLowerCase()) ?? n)])];
-    onChange(next);
+    const picked = raw.split(",").map((s) => s.trim()).filter(Boolean).map((n) => COUNTRIES.find((c) => c.code === n.toUpperCase() || c.name.toLowerCase() === n.toLowerCase())?.code ?? n.toUpperCase());
+    onChange([...new Set([...value, ...picked])]);
     setDraft("");
   };
   return (
     <div>
-      <label htmlFor={`f-${name}`} className="text-sm">{label}</label>
-      <div className="mt-1.5 flex gap-2">
+      <label htmlFor="f-countries" className="text-sm">Countries</label>
+      <div className="mt-1.5 flex flex-wrap gap-2">
         <input
-          id={`f-${name}`}
-          list={`${name}-options`}
+          id="f-countries"
+          list="country-options"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -200,19 +199,22 @@ function PlaceList({ label, name, value, options, onChange, error }: { label: st
               add(draft);
             }
           }}
-          placeholder="Type a name and press Enter"
+          placeholder="Country name or code, then Enter"
           aria-invalid={Boolean(error)}
-          className="h-11 min-w-0 flex-1 rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+          className="h-11 min-w-0 flex-1 rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-ink"
         />
-        <datalist id={`${name}-options`}>{options.map((o) => <option key={o} value={o} />)}</datalist>
+        <datalist id="country-options">{COUNTRIES.map((c) => <option key={c.code} value={c.name} />)}</datalist>
         <Button variant="secondary" onClick={() => add(draft)} disabled={!draft.trim()}>Add</Button>
+        <Button variant="secondary" onClick={() => onChange([...new Set([...value, HOME_COUNTRY])])}>+ UK</Button>
+        <Button variant="secondary" onClick={() => onChange([...new Set([...value, ...EUROPE])])}>+ Europe</Button>
+        {value.length > 0 && <Button variant="secondary" onClick={() => onChange([])}>Clear</Button>}
       </div>
       {value.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {value.map((x) => (
-            <li key={x} className={`flex items-center gap-1 rounded-full py-0.5 pr-1 pl-3 text-xs ${options.includes(x) ? "bg-sand" : "bg-danger/10 text-danger"}`}>
-              {x}
-              <button type="button" onClick={() => onChange(value.filter((y) => y !== x))} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white" aria-label={`Remove ${x}`}><CloseIcon size={12} /></button>
+            <li key={x} className={`flex items-center gap-1 rounded-full py-0.5 pr-1 pl-3 text-xs ${CODES.includes(x) ? "bg-sand" : "bg-danger/10 text-danger"}`}>
+              {countryName(x)}
+              <button type="button" onClick={() => onChange(value.filter((y) => y !== x))} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-surface" aria-label={`Remove ${countryName(x)}`}><CloseIcon size={12} /></button>
             </li>
           ))}
         </ul>
@@ -226,46 +228,31 @@ export function ZoneForm({ initial }: { initial: ZoneValue }) {
   const back = "/admin/delivery-zones";
   const { v, set, submit, pending, error, fields, run } = useForm(initial, saveZone, back);
   const router = useRouter();
-  const t = (k: "name" | "fee" | "etaMinDays" | "etaMaxDays" | "sortOrder") => ({ name: k, value: v[k], error: fields[k], onChange: (e: React.ChangeEvent<HTMLInputElement>) => set(k, e.target.value) });
-  const isFallback = !v.divisions.length && !v.districts.length && !v.areas.length;
+  const t = (k: "name" | "fee" | "etaMinDays" | "etaMaxDays" | "sortOrder" | "note") => ({ name: k, value: v[k], error: fields[k], onChange: (e: React.ChangeEvent<HTMLInputElement>) => set(k, e.target.value) });
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
-        <TextField label="Name" {...t("name")} />
-        <TextField label="Fee (৳)" type="number" min={0} {...t("fee")} />
+        <TextField label="Name" {...t("name")} hint="Shown at checkout, e.g. UK Next day" />
+        <TextField label="Fee ($)" type="number" min={0} step="0.01" {...t("fee")} />
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <TextField label="Min days" type="number" min={0} {...t("etaMinDays")} />
-        <TextField label="Max days" type="number" min={0} {...t("etaMaxDays")} />
+        <TextField label="Min working days" type="number" min={0} {...t("etaMinDays")} />
+        <TextField label="Max working days" type="number" min={0} {...t("etaMaxDays")} />
         <TextField label="Sort order" type="number" {...t("sortOrder")} />
       </div>
-      <fieldset>
-        <legend className="text-sm">Divisions</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {divisions.map((d) => {
-            const on = v.divisions.includes(d.name);
-            return (
-              <label key={d.name} className={`flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm ${on ? "border-ink bg-ink text-white" : "border-line bg-white hover:border-ink"}`}>
-                <input type="checkbox" className="sr-only" checked={on} onChange={() => set("divisions", on ? v.divisions.filter((x) => x !== d.name) : [...v.divisions, d.name])} />
-                {d.name}
-              </label>
-            );
-          })}
-        </div>
-        {fields.divisions && <p className="mt-1 text-sm text-danger">{fields.divisions}</p>}
-      </fieldset>
-      <PlaceList label="Districts" name="districts" value={v.districts} options={ALL_DISTRICTS} onChange={(x) => set("districts", x)} error={fields.districts} />
-      <PlaceList label="Areas (upazila / Dhaka city thana)" name="areas" value={v.areas} options={ALL_AREAS} onChange={(x) => set("areas", x)} error={fields.areas} />
+      <TextField label="Note (optional)" {...t("note")} hint="Shown under the option, e.g. Order before 2 pm" />
+      <CountryList value={v.countries} onChange={(x) => set("countries", x)} error={fields.countries} />
       <p className="rounded-md bg-paper px-3 py-2 text-xs text-muted">
-        The most specific match wins: area, then district, then division. {isFallback ? "With no places selected, this zone is the fallback for every address no other zone matches." : ""}
+        Shoppers see every active option that lists their country and choose one. {!v.countries.length ? "With no countries, this option covers every country that no other option lists (rest of the world)." : ""}
       </p>
+      <Checkbox label="Free when the order reaches the free-delivery threshold (Settings)" name="freeEligible" checked={v.freeEligible} onChange={(x) => set("freeEligible", x)} />
       <Checkbox label="Active" name="isActive" checked={v.isActive} onChange={(x) => set("isActive", x)} />
       <FormStatus error={error} message={null} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Actions pending={pending} back={back} />
         {v.id && (
-          <Button variant="secondary" className="border-danger text-danger hover:bg-danger hover:text-white" disabled={pending} onClick={() => window.confirm(`Delete the ${v.name} zone?`) && run(() => deleteZone({ id: v.id }), { onOk: () => router.push(back) })}>
-            Delete zone
+          <Button variant="secondary" className="border-danger text-danger hover:bg-danger hover:text-paper" disabled={pending} onClick={() => window.confirm(`Delete ${v.name}?`) && run(() => deleteZone({ id: v.id }), { onOk: () => router.push(back) })}>
+            Delete option
           </Button>
         )}
       </div>

@@ -1,14 +1,15 @@
-import type { Dict } from "@/lib/i18n";
+import { fmt, type Dict } from "@/lib/i18n";
+import { formatMoney } from "@/lib/money";
 import { AwardIcon, BoxIcon, LockIcon, TruckIcon } from "@/components/ui/icons";
 import { Container } from "@/components/Container";
 
 const ICONS = [TruckIcon, BoxIcon, AwardIcon, LockIcon];
 
-export function FeatureBar({ t }: { t: Dict }) {
+export function FeatureBar({ t, freeOver }: { t: Dict; freeOver: number }) {
   return (
     <section className="reveal py-6 md:py-8">
       <Container>
-        <ul className="grid grid-cols-2 rounded-xl border border-line bg-white/50 lg:grid-cols-4">
+        <ul className="grid grid-cols-2 rounded-xl border border-line bg-surface/50 lg:grid-cols-4">
           {t.home.features.map((f, i) => {
             const Icon = ICONS[i];
             return (
@@ -16,7 +17,7 @@ export function FeatureBar({ t }: { t: Dict }) {
                 <Icon size={30} strokeWidth={1.2} className="shrink-0" />
                 <div>
                   <p className="label">{f.title}</p>
-                  <p className="mt-0.5 text-xs text-muted">{f.text}</p>
+                  <p className="mt-0.5 text-xs text-muted">{fmt(f.text, { amount: formatMoney(freeOver) })}</p>
                 </div>
               </li>
             );

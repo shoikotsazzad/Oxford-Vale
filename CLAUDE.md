@@ -13,16 +13,16 @@ Portfolio project: every flow must work end to end; real integrations are mocked
 ## Client
 - Name: Oxford Vale (legal: Oxford Vale Menswear Ltd. — placeholder)
 - Industry: ecommerce (menswear)
-- Phone: 01700-000001 · WhatsApp: 01700-000002 · Email: hello@oxfordvale.example · Orders: orders@oxfordvale.example
-- Address: House 12, Road 27, Block A, Gulshan 1, Dhaka 1212, Bangladesh
-- Language: English default + Bangla UI toggle
+- Setting: UK brand (London) since 2026-10-28 · prices in USD (stored in cents) · Stripe + PayPal · English only (UK spelling) · light/dark mode
+- Phone: 020 7946 0001 · Freephone: 0800 000 0001 · Email: hello@oxfordvale.example · Orders: orders@oxfordvale.example (no WhatsApp)
+- Address: 14 Savile Row, Mayfair, London W1S 3PR, United Kingdom (placeholder number)
 - Full details: `notes/client.md` · Missing items: `notes/missing.md`
 
 ## Pages
-Storefront: Home `/` · Shop `/shop` (+ `/shop/[category]`, `/collections/[slug]`) · Product `/product/[slug]` · Search `/search` · Cart `/cart` · Checkout `/checkout` (+ `/checkout/pay/[orderNo]`) · Order `/order/[orderNo]` · Track `/track-order` · Account `/account/*` (login, register, forgot/reset password, orders, addresses, wishlist)
+Storefront: Home `/` · Shop `/shop` (+ `/shop/[category]`, `/collections/[slug]`) · Product `/product/[slug]` · Search `/search` · Cart `/cart` · Checkout `/checkout` (+ `/checkout/pay/[orderNo]`) · Order `/order/[orderNo]` · Track `/track-order` · Account `/account/*` (login, register, forgot/reset password, orders, addresses) — no wishlist (removed 2026-10-29)
 Static: About · Contact · Size Guide · Shipping Policy · Returns Policy · Privacy · Terms
-Navbar: Suits · Outerwear · Shirts · Accessories · Caps · Shoes (+ "All" menu). Header icons: search, account, wishlist, cart (count).
-Admin `/admin` (noindex, roles Owner/Manager/Staff): dashboard, products, categories, collections, orders, customers & leads, coupons, delivery zones, settings, users, audit log, messages.
+Navbar: Suits · Outerwear · Shirts · Accessories · Caps · Shoes (+ "All" menu). Header icons: search, light/dark toggle, account, cart (count). Below lg: header is wordmark + light/dark toggle only; bottom tab bar (Home, Shop, Search, Bag, Account; hidden on checkout); compact centred footer.
+Admin `/admin` (noindex, roles Owner/Manager/Staff): dashboard, products, categories, collections, orders, customers & leads, coupons, delivery options, settings, users, audit log, messages.
 
 ## Design
 Reference: `notes/design/reference-evora-style-home.jpg` (layout/style only; brand is Oxford Vale).
@@ -30,12 +30,12 @@ Reference: `notes/design/reference-evora-style-home.jpg` (layout/style only; bra
 - Fonts: Playfair Display for headings and the wordmark (high contrast, large); Inter for body/UI. Small uppercase tracked labels for nav, eyebrows and buttons.
 - Spacing: container `max-w-7xl`, sections `py-16 md:py-20`, tight product grid gap (16px), generous hero.
 - Shape: buttons `rounded-md` (pill-ish black primary, outlined secondary) with arrow icon; cards with small radius (`rounded-lg`), no heavy shadows; category band `rounded-2xl` black.
-- Layout: header = category links left, centered wordmark with small tagline, icon links right (search, account, wishlist, cart). Hero = huge "OXFORD VALE" wordmark with the cut-out model in front of it, tagline top-left, "Shop Now" + "Explore Collection" bottom-left, "New collection" note right. Black category band with 4–5 image cards (title, line, "Shop" pill). New-season split banner (serif headline left, photo right). 4-item feature bar with line icons and dividers. "Best of" product row (5 columns desktop, 2 mobile) with hover image swap, wishlist heart, name + ৳ price.
+- Layout: header = category links left, centered wordmark with small tagline, icon links right (search, account, cart). Hero = huge "OXFORD VALE" wordmark with the cut-out model in front of it, tagline top-left, "Shop Now" + "Explore Collection" bottom-left, "New collection" note right. Black category band with 4–5 image cards (title, line, "Shop" pill). New-season split banner (serif headline left, photo right). 4-item feature bar with line icons and dividers. "Best of" product row (5 columns desktop, 2 mobile) with hover image swap, name + $ price. Dark theme: same tokens redefined under `[data-theme="dark"]` in `app/globals.css`.
 
 ## Status
-- Stage: delivered (portfolio build) — all 7 build steps done 2026-10-23; home redesign + navigation change request done 2026-10-23. Next: developer review, commit and deploy.
-- Done: storefront, cart + lead capture, checkout (COD, SSLCommerz mock/sandbox, bKash/Nagad manual), orders, tracking, customer accounts + wishlist, full admin panel with roles + audit log, demo data (`seed -- --demo`), email/SMS notifications (log mode until accounts are added), 89 tests, Lighthouse a11y/best-practices 100, perf 90–99
-- Pending (before a real launch, see notes/missing.md): real product + brand photos (home uses credited stand-ins), SMTP/SMS/SSLCommerz live accounts, cloud image storage, remove demo data, brand photos in public/brand/, confirm drafted policy details
+- Stage: delivered (portfolio build) — 7 build steps done 2026-10-23; home redesign 2026-10-23; UK store (USD, Stripe/PayPal, UK addresses, English only) + light/dark mode 2026-10-28. App-style phone/tablet layout (bottom tab bar, hero card, category tiles, offer card) 2026-10-29. Next: developer review, Next.js security upgrade, commit and deploy.
+- Done: storefront, cart + lead capture, checkout (Stripe + PayPal, mock until keys), delivery options per country, orders, tracking, customer accounts, full admin panel with roles + audit log, demo data, email notifications (log mode until SMTP), DB migrated in place (`npm run migrate:uk`), 95 tests
+- Pending (before a real launch, see notes/missing.md): Next.js 16.4.0 → 16.4.3 (security), Stripe/PayPal/SMTP keys, cloud image storage, remove demo data, real photos with cleared rights (hero, new-season and shop-the-look images are developer-supplied, not licensed), confirm drafted policies and placeholder delivery fees
 - Dev note: the developer often runs `npm run dev` on :3000 — test against it instead of starting a second server.
 - Placeholders open: business IDs, bank details, domain (all placeholders by design)
 - Developer connects their own MongoDB (local .env.local points at mongodb://127.0.0.1:27017/oxford-vale). Never git commit or push until the developer says so.

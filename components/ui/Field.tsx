@@ -2,7 +2,7 @@
 type Base = { label: string; name: string; error?: string; hint?: string; className?: string };
 
 const control = (error?: string) =>
-  `mt-1.5 block min-h-12 w-full rounded-md border bg-white px-3 text-base outline-none transition-colors focus:border-ink ${error ? "border-danger" : "border-line"}`;
+  `mt-1.5 block min-h-12 w-full rounded-md border bg-surface px-3 text-base outline-none transition-colors focus:border-ink ${error ? "border-danger" : "border-line"}`;
 
 function Wrap({ label, name, error, hint, className = "", children }: Base & { children: React.ReactNode }) {
   return (

@@ -19,7 +19,7 @@ function setIn<T>(o: T, path: Path, value: unknown): T {
 
 function Section({ title, text, children }: { title: string; text?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-white p-5">
+    <section className="rounded-lg border border-line bg-surface p-5">
       <h2 className="text-sm font-semibold">{title}</h2>
       {text && <p className="mt-1 text-xs text-muted">{text}</p>}
       <div className="mt-4 space-y-4">{children}</div>
@@ -47,12 +47,12 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
     >
       <Section title="Store">
         <Grid>{f("storeName", "Store name")}{f("tagline", "Tagline")}</Grid>
-        <Grid>{f("legal.name", "Legal name")}{f("legal.tradeLicence", "Trade licence no.")}</Grid>
-        <Grid>{f("legal.tin", "TIN")}{f("legal.bin", "BIN (VAT)")}</Grid>
+        <Grid>{f("legal.name", "Legal name")}{f("legal.companyNo", "Company no. (Companies House)")}</Grid>
+        <Grid>{f("legal.vatNo", "VAT no.")}{f("legal.registeredOffice", "Registered office")}</Grid>
       </Section>
 
-      <Section title="Contact" text="Shown in the header, footer, contact page and invoices. The orders email receives new-order alerts (step 6).">
-        <Grid>{f("contact.phone", "Phone")}{f("contact.whatsapp", "WhatsApp")}</Grid>
+      <Section title="Contact" text="Shown in the footer, contact page, emails and invoices. The orders email receives new-order alerts.">
+        <Grid>{f("contact.phone", "Customer care phone")}{f("contact.freephone", "Freephone")}</Grid>
         <Grid>{f("contact.email", "Email", { type: "email" })}{f("contact.supportEmail", "Support email", { type: "email" })}</Grid>
         {f("contact.ordersEmail", "Orders email (admin alerts)", { type: "email" })}
         {f("address.line", "Address")}
@@ -74,7 +74,7 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
 
       <Section title="Social links">
         <Grid>{f("socials.facebook", "Facebook")}{f("socials.instagram", "Instagram")}</Grid>
-        <Grid>{f("socials.youtube", "YouTube")}{f("socials.tiktok", "TikTok")}</Grid>
+        <Grid>{f("socials.x", "X")}{f("socials.youtube", "YouTube")}</Grid>
       </Section>
 
       <Section title="Home page">
@@ -93,22 +93,19 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
 
       <Section title="Orders & stock">
         <div className="grid gap-4 sm:grid-cols-3">
-          {f("freeDeliveryThreshold", "Free delivery over (৳)", { type: "number", min: 0, hint: "0 turns free delivery off" })}
+          {f("freeDeliveryThreshold", "Free delivery over ($)", { type: "number", min: 0, step: "0.01", hint: "Applies to options marked free-eligible. 0 turns it off" })}
           {f("abandonedAfterMinutes", "Abandoned after (minutes)", { type: "number", min: 15 })}
           {f("lowStockThreshold", "Low stock at or below", { type: "number", min: 0 })}
         </div>
       </Section>
 
-      <Section title="Payments" text="Methods turned off disappear from checkout. bKash/Nagad numbers are shown to customers with the amount to send.">
-        <div className="flex flex-wrap gap-x-6">{check("payments.cod", "Cash on delivery")}{check("payments.sslcommerz", "SSLCommerz (cards, mobile banking)")}</div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">{check("payments.bkash.enabled", "bKash (manual Trx ID)")}{f("payments.bkash.number", "bKash merchant number")}</div>
-          <div className="space-y-2">{check("payments.nagad.enabled", "Nagad (manual Trx ID)")}{f("payments.nagad.number", "Nagad merchant number")}</div>
-        </div>
+      <Section title="Payments" text="Methods turned off disappear from checkout. Keys go in .env.local (STRIPE_SECRET_KEY, PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET); without keys each runs in test (mock) mode.">
+        <div className="flex flex-wrap gap-x-6">{check("payments.stripe", "Stripe (cards, Amex, Apple Pay, Google Pay, Klarna)")}{check("payments.paypal", "PayPal")}</div>
       </Section>
 
       <Section title="Invoices">
-        <div className="grid gap-4 sm:grid-cols-3">{f("bank.accountName", "Bank account name")}{f("bank.accountNo", "Account no.")}{f("bank.bankBranch", "Bank & branch")}</div>
+        <div className="grid gap-4 sm:grid-cols-2">{f("bank.accountName", "Bank account name")}{f("bank.bank", "Bank & branch")}</div>
+        <div className="grid gap-4 sm:grid-cols-2">{f("bank.sortCode", "Sort code")}{f("bank.accountNo", "Account no.")}</div>
         <TextArea label="Invoice footer" name="invoiceFooter" rows={2} value={v.invoiceFooter} error={fields.invoiceFooter} onChange={(e) => setV((p) => ({ ...p, invoiceFooter: e.target.value }))} />
       </Section>
 

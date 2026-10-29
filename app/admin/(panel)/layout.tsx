@@ -36,7 +36,7 @@ async function AdminShell({ children }: { children: React.ReactNode }) {
         { href: "/admin/categories", label: "Categories" },
         { href: "/admin/collections", label: "Collections" },
         { href: "/admin/coupons", label: "Coupons" },
-        { href: "/admin/delivery-zones", label: "Delivery zones" },
+        { href: "/admin/delivery-zones", label: "Delivery options" },
       ],
     },
     ...(can(user.role, "settings")

@@ -8,7 +8,10 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Checkbox, TextArea, TextField } from "@/components/ui/Field";
 import { LockIcon } from "@/components/ui/icons";
 import { fmt } from "@/lib/i18n";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
+import { addressLines } from "@/lib/address";
+import { formatPhone, isValidPhone, normalizePhone } from "@/lib/phone";
+import type { PaymentMethod } from "@/models/enums";
 import { imageSrc, isPlaceholder } from "@/lib/images";
 import { getCheckoutQuote, placeOrderAction, saveCheckoutLead, type QuoteResult } from "@/server/actions/checkout";
 import { useCart } from "@/components/cart/CartProvider";
@@ -22,11 +25,9 @@ type Props = {
   contact: { name: string; phone: string; email: string };
   savedAddresses: SavedAddress[];
   loggedIn: boolean;
-  payments: { cod: boolean; sslcommerz: boolean; bkash: boolean; nagad: boolean };
+  payments: Record<PaymentMethod, boolean>;
 };
 
-type Method = "cod" | "sslcommerz" | "bkash" | "nagad";
-const BD_PHONE = /^(?:\+?88)?01[3-9]\d{8}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CheckoutForm({ lines, initialQuote, contact: initialContact, savedAddresses, loggedIn, payments }: Props) {
@@ -38,7 +39,8 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
   const [contact, setContact] = useState(initialContact);
   const [address, setAddress] = useState<AddressValue>(defaultAddr ?? { ...emptyAddress, name: initialContact.name, phone: initialContact.phone });
   const [savedId, setSavedId] = useState<string | null>(defaultAddr?.id ?? null);
-  const [method, setMethod] = useState<Method>(payments.cod ? "cod" : payments.sslcommerz ? "sslcommerz" : payments.bkash ? "bkash" : "nagad");
+  const [method, setMethod] = useState<PaymentMethod>(payments.stripe ? "stripe" : "paypal");
+  const [deliveryOption, setDeliveryOption] = useState(initialQuote.zone?.id ?? "");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState("");
   const [note, setNote] = useState("");
@@ -52,25 +54,29 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
   const [pending, start] = useTransition();
   const leadSent = useRef("");
 
-  // Recalculate delivery and discount whenever the area or coupon changes.
+  // Recalculate delivery options, fees and discount whenever the country, option or coupon changes.
   useEffect(() => {
     let live = true;
     const timer = setTimeout(async () => {
       setQuoting(true);
-      const res = await getCheckoutQuote({ division: address.division, district: address.district, upazila: address.upazila, couponCode: coupon, phone: contact.phone });
-      if (live && res.ok) setQ(res.data);
+      const res = await getCheckoutQuote({ country: address.country, deliveryOption, couponCode: coupon, phone: contact.phone });
+      if (live && res.ok) {
+        setQ(res.data);
+        // A new country has its own options: fall back to the first one.
+        if (res.data.zone && res.data.zone.id !== deliveryOption) setDeliveryOption(res.data.zone.id);
+      }
       if (live) setQuoting(false);
     }, 150);
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [address.division, address.district, address.upazila, coupon, contact.phone]);
+  }, [address.country, deliveryOption, coupon, contact.phone]);
 
   // Lead capture at checkout start: once name, phone and email look valid.
   function maybeSaveLead() {
     const key = `${contact.name}|${contact.phone}|${contact.email}`;
-    if (contact.name.trim().length >= 2 && BD_PHONE.test(contact.phone.replace(/[\s-]/g, "")) && EMAIL.test(contact.email) && leadSent.current !== key) {
+    if (contact.name.trim().length >= 2 && isValidPhone(normalizePhone(contact.phone)) && EMAIL.test(contact.email) && leadSent.current !== key) {
       leadSent.current = key;
       void saveCheckoutLead(contact);
     }
@@ -84,7 +90,7 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
     setFormError(null);
     start(async () => {
       const res = await placeOrderAction({
-        contact, address, paymentMethod: method, couponCode: appliedCoupon ?? "", note,
+        contact, address, deliveryOption, paymentMethod: method, couponCode: appliedCoupon ?? "", note,
         createAccount: !loggedIn && createAccount, password, saveAddress: loggedIn && saveAddress && !savedId,
       });
       if (!res.ok) {
@@ -100,13 +106,11 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
     });
   }
 
-  const methods: { id: Method; title: string; text: string; on: boolean }[] = [
-    { id: "cod", title: t.checkout.cod, text: t.checkout.codText, on: payments.cod },
-    { id: "sslcommerz", title: t.checkout.ssl, text: t.checkout.sslText, on: payments.sslcommerz },
-    { id: "bkash", title: t.checkout.bkash, text: t.checkout.bkashText, on: payments.bkash },
-    { id: "nagad", title: t.checkout.nagad, text: t.checkout.nagadText, on: payments.nagad },
+  const methods: { id: PaymentMethod; title: string; text: string; on: boolean }[] = [
+    { id: "stripe", title: t.checkout.stripe, text: t.checkout.stripeText, on: payments.stripe },
+    { id: "paypal", title: t.checkout.paypal, text: t.checkout.paypalText, on: payments.paypal },
   ];
-  const section = "rounded-lg bg-white/60 p-5 ring-1 ring-line md:p-6";
+  const section = "rounded-lg bg-surface/60 p-5 ring-1 ring-line md:p-6";
   const h2 = "font-serif text-2xl";
 
   return (
@@ -137,7 +141,7 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
                 if (!savedId && address.name === contact.name) setAddress((a) => ({ ...a, name }));
               }}
               onBlur={maybeSaveLead} />
-            <TextField label={t.checkout.phone} name="contact-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={contact.phone} error={errors["contact.phone"]}
+            <TextField label={t.checkout.phone} name="contact-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="07700 900123" value={contact.phone} error={errors["contact.phone"]}
               onChange={(e) => {
                 const phone = e.target.value;
                 setContact((c) => ({ ...c, phone }));
@@ -164,12 +168,12 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
               <legend className="label text-muted">{t.checkout.savedAddresses}</legend>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {savedAddresses.map((a) => (
-                  <label key={a.id} className={`flex cursor-pointer gap-3 rounded-md border p-4 text-sm ${savedId === a.id ? "border-ink bg-white" : "border-line"}`}>
+                  <label key={a.id} className={`flex cursor-pointer gap-3 rounded-md border p-4 text-sm ${savedId === a.id ? "border-ink bg-surface" : "border-line"}`}>
                     <input type="radio" name="saved-address" className="mt-0.5 accent-ink" checked={savedId === a.id} onChange={() => { setSavedId(a.id); setAddress(a); }} />
-                    <span><span className="font-medium">{a.label}</span><br />{a.name} · {a.phone}<br /><span className="text-muted">{a.addressLine}, {a.upazila}, {a.district}</span></span>
+                    <span><span className="font-medium">{a.label}</span><br />{a.name} · {formatPhone(a.phone)}<br /><span className="text-muted">{addressLines(a).join(", ")}</span></span>
                   </label>
                 ))}
-                <label className={`flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm ${savedId === null ? "border-ink bg-white" : "border-line"}`}>
+                <label className={`flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm ${savedId === null ? "border-ink bg-surface" : "border-line"}`}>
                   <input type="radio" name="saved-address" className="accent-ink" checked={savedId === null} onChange={() => { setSavedId(null); setAddress({ ...emptyAddress, name: contact.name, phone: contact.phone }); }} />
                   {t.checkout.newAddress}
                 </label>
@@ -182,23 +186,34 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
               {loggedIn && <div className="mt-2"><Checkbox name="save-address" label={t.checkout.saveAddress} checked={saveAddress} onChange={setSaveAddress} /></div>}
             </div>
           )}
-          <div className="mt-5 rounded-md bg-sand px-4 py-3 text-sm" aria-live="polite">
-            {q.zone ? (
-              <span className="flex flex-wrap justify-between gap-2">
-                <span><span className="font-medium">{q.zone.name}</span> · {fmt(t.checkout.days, { min: q.zone.etaMinDays, max: q.zone.etaMaxDays })}</span>
-                <span>{q.freeDelivery ? t.checkout.free : formatBDT(q.zone.fee)}</span>
-              </span>
-            ) : (
-              <span className="text-muted">{t.checkout.zoneUnknown}</span>
-            )}
-          </div>
+        </section>
+
+        <section className={section} aria-labelledby="h-delivery">
+          <h2 id="h-delivery" className={h2}>{t.checkout.delivery}</h2>
+          {q.options.length ? (
+            <div className={`mt-5 grid gap-3 ${quoting ? "opacity-60" : ""}`} role="radiogroup" aria-labelledby="h-delivery">
+              {q.options.map((o) => (
+                <label key={o.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 transition-colors ${deliveryOption === o.id ? "border-ink bg-surface" : "border-line hover:border-ink/40"}`}>
+                  <input type="radio" name="delivery" value={o.id} checked={deliveryOption === o.id} onChange={() => setDeliveryOption(o.id)} className="mt-1 accent-ink" />
+                  <span className="flex-1">
+                    <span className="block text-sm font-medium">{o.name}</span>
+                    <span className="block text-xs text-muted">{fmt(t.checkout.days, { min: o.etaMinDays, max: o.etaMaxDays })}{o.note ? ` · ${o.note}` : ""}</span>
+                  </span>
+                  <span className="text-sm">{o.fee === 0 ? t.checkout.free : formatMoney(o.fee)}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 rounded-md bg-sand px-4 py-3 text-sm text-muted">{t.checkout.zoneUnknown}</p>
+          )}
+          {errors.deliveryOption && <p className="mt-2 text-sm text-danger">{errors.deliveryOption}</p>}
         </section>
 
         <section className={section} aria-labelledby="h-payment">
           <h2 id="h-payment" className={h2}>{t.checkout.payment}</h2>
           <div className="mt-5 grid gap-3" role="radiogroup" aria-labelledby="h-payment">
             {methods.filter((m) => m.on).map((m) => (
-              <label key={m.id} className={`flex cursor-pointer gap-3 rounded-md border p-4 transition-colors ${method === m.id ? "border-ink bg-white" : "border-line hover:border-ink/40"}`}>
+              <label key={m.id} className={`flex cursor-pointer gap-3 rounded-md border p-4 transition-colors ${method === m.id ? "border-ink bg-surface" : "border-line hover:border-ink/40"}`}>
                 <input type="radio" name="payment" value={m.id} checked={method === m.id} onChange={() => setMethod(m.id)} className="mt-1 accent-ink" />
                 <span>
                   <span className="block text-sm font-medium">{m.title}</span>
@@ -222,13 +237,13 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
                 <li key={l.variantId} className="flex gap-3 py-3">
                   <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded bg-sand">
                     <Image src={src} alt="" fill sizes="64px" className="object-cover" unoptimized={isPlaceholder(src)} />
-                    <span className="absolute -top-0 -right-0 flex h-5 min-w-5 items-center justify-center rounded-bl bg-ink px-1 text-[10px] text-white">{l.qty}</span>
+                    <span className="absolute -top-0 -right-0 flex h-5 min-w-5 items-center justify-center rounded-bl bg-ink px-1 text-[10px] text-paper">{l.qty}</span>
                   </span>
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="block leading-snug">{l.name}</span>
                     <span className="block text-xs text-muted">{l.size !== "One Size" && `${l.size} · `}{l.colour}</span>
                   </span>
-                  <span className="text-sm">{formatBDT(l.lineTotal)}</span>
+                  <span className="text-sm">{formatMoney(l.lineTotal)}</span>
                 </li>
               );
             })}
@@ -251,10 +266,10 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
           </div>
 
           <dl className={`mt-4 space-y-2 border-t border-line pt-4 text-sm ${quoting ? "opacity-60" : ""}`} aria-live="polite">
-            <div className="flex justify-between"><dt>{t.checkout.subtotal}</dt><dd>{formatBDT(q.subtotal)}</dd></div>
-            {q.discount > 0 && <div className="flex justify-between text-success"><dt>{t.checkout.discount}</dt><dd>−{formatBDT(q.discount)}</dd></div>}
-            <div className="flex justify-between"><dt>{t.checkout.deliveryFee}</dt><dd>{q.zone ? (q.deliveryFee === 0 ? t.checkout.free : formatBDT(q.deliveryFee)) : "—"}</dd></div>
-            <div className="flex justify-between border-t border-line pt-3 text-base"><dt className="font-medium">{t.checkout.total}</dt><dd className="font-medium">{formatBDT(q.total)}</dd></div>
+            <div className="flex justify-between"><dt>{t.checkout.subtotal}</dt><dd>{formatMoney(q.subtotal)}</dd></div>
+            {q.discount > 0 && <div className="flex justify-between text-success"><dt>{t.checkout.discount}</dt><dd>−{formatMoney(q.discount)}</dd></div>}
+            <div className="flex justify-between"><dt>{t.checkout.deliveryFee}</dt><dd>{q.zone ? (q.deliveryFee === 0 ? t.checkout.free : formatMoney(q.deliveryFee)) : "—"}</dd></div>
+            <div className="flex justify-between border-t border-line pt-3 text-base"><dt className="font-medium">{t.checkout.total}</dt><dd className="font-medium">{formatMoney(q.total)}</dd></div>
           </dl>
 
           {q.problems.length > 0 && (
@@ -264,7 +279,7 @@ export function CheckoutForm({ lines, initialQuote, contact: initialContact, sav
           )}
 
           <Button type="submit" className="mt-6 min-h-13 w-full" disabled={pending || q.problems.length > 0} arrow={!pending}>
-            {pending ? t.checkout.placing : `${t.checkout.placeOrder} · ${formatBDT(q.total)}`}
+            {pending ? t.checkout.placing : `${t.checkout.placeOrder} · ${formatMoney(q.total)}`}
           </Button>
           <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted"><LockIcon size={14} /> {t.checkout.terms}</p>
         </div>

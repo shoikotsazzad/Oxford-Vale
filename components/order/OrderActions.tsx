@@ -3,10 +3,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { WhatsAppIcon } from "@/components/ui/icons";
+import { MailIcon } from "@/components/ui/icons";
 import { cancelMyOrder } from "@/server/actions/checkout";
 
-export function OrderActions({ orderNo, orderKey, canCancel, payHref, whatsappHref }: { orderNo: string; orderKey?: string; canCancel: boolean; payHref?: string; whatsappHref: string }) {
+export function OrderActions({ orderNo, orderKey, canCancel, payHref, contactHref }: { orderNo: string; orderKey?: string; canCancel: boolean; payHref?: string; contactHref: string }) {
   const { t } = useI18n();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -14,8 +14,8 @@ export function OrderActions({ orderNo, orderKey, canCancel, payHref, whatsappHr
   return (
     <>
       {payHref && <ButtonLink href={payHref} arrow>{t.order.payNow}</ButtonLink>}
-      <a href={whatsappHref} target="_blank" rel="noopener" className="label inline-flex min-h-11 items-center gap-2 rounded-md border border-line px-4 hover:border-ink">
-        <WhatsAppIcon size={16} className="text-[#25D366]" /> {t.order.whatsapp}
+      <a href={contactHref} className="label inline-flex min-h-11 items-center gap-2 rounded-md border border-line px-4 hover:border-ink">
+        <MailIcon size={16} /> {t.order.contact}
       </a>
       {canCancel && (
         <Button

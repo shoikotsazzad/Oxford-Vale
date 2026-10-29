@@ -1,16 +1,10 @@
-// Dashboard numbers. "Sales" = orders that are not cancelled, returned or refunded, by order date in Dhaka time.
-import { ContactMessageModel, LeadModel, OrderModel, VariantModel, isAwaitingVerification, type OrderStatus } from "@/models";
+// Dashboard numbers. "Sales" = orders that are not cancelled, returned or refunded, by order date in UK time.
+import { ContactMessageModel, LeadModel, OrderModel, VariantModel, type OrderStatus } from "@/models";
+import { londonDateKey, londonDayStart, TIME_ZONE } from "@/lib/dates";
 
-const TZ = "+06:00";
 const LOST: OrderStatus[] = ["cancelled", "returned", "refunded"];
 const DAY = 864e5;
-
-/** Start of the Dhaka calendar day containing `d`, as a UTC Date. */
-export function dhakaDayStart(d: Date) {
-  const shifted = new Date(d.getTime() + 6 * 3600_000);
-  return new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) - 6 * 3600_000);
-}
-export const dhakaDateKey = (d: Date) => new Date(d.getTime() + 6 * 3600_000).toISOString().slice(0, 10);
+const NOON = 12 * 3600_000; // stepping from midday keeps 23- and 25-hour clock-change days on the right date
 
 async function salesSince(from: Date) {
   const [row] = await OrderModel.aggregate<{ revenue: number; orders: number }>([
@@ -21,21 +15,22 @@ async function salesSince(from: Date) {
 }
 
 export async function getDashboard(lowStockThreshold: number, now = new Date()) {
-  const today = dhakaDayStart(now);
+  const today = londonDayStart(now);
   const days = 30;
-  const from30 = new Date(today.getTime() - (days - 1) * DAY);
+  const from30 = londonDayStart(new Date(today.getTime() + NOON - (days - 1) * DAY));
 
   const [todaySales, week, month, daily, attention, lowStock, recentOrders, leads, topProducts] = await Promise.all([
     salesSince(today),
-    salesSince(new Date(today.getTime() - 6 * DAY)),
+    salesSince(londonDayStart(new Date(today.getTime() + NOON - 6 * DAY))),
     salesSince(from30),
     OrderModel.aggregate<{ _id: string; revenue: number; orders: number }>([
       { $match: { createdAt: { $gte: from30 }, status: { $nin: LOST } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: TZ } }, revenue: { $sum: "$total" }, orders: { $sum: 1 } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: TIME_ZONE } }, revenue: { $sum: "$total" }, orders: { $sum: 1 } } },
     ]),
     Promise.all([
       OrderModel.countDocuments({ status: "pending" }),
-      OrderModel.countDocuments({ paymentMethod: { $in: ["bkash", "nagad"] }, paymentStatus: { $ne: "paid" }, "payment.submittedAt": { $exists: true }, status: { $nin: LOST } }),
+      // Online payment started but not completed (or failed): worth a follow-up email.
+      OrderModel.countDocuments({ status: "pending", paymentStatus: { $in: ["unpaid", "failed"] } }),
       OrderModel.countDocuments({ status: { $in: ["confirmed", "processing"] } }),
       ContactMessageModel.countDocuments({ status: "new" }),
     ]),
@@ -48,7 +43,7 @@ export async function getDashboard(lowStockThreshold: number, now = new Date()) 
       { $limit: 8 },
       { $project: { sku: 1, size: 1, colour: 1, stock: 1, "product._id": 1, "product.name": 1 } },
     ]),
-    OrderModel.find().sort({ createdAt: -1 }).limit(8).select("orderNo customer.name total status paymentStatus paymentMethod payment.submittedAt createdAt").lean(),
+    OrderModel.find().sort({ createdAt: -1 }).limit(8).select("orderNo customer.name total status paymentStatus paymentMethod createdAt").lean(),
     LeadModel.find({ status: { $in: ["cart", "abandoned"] }, cartValue: { $gt: 0 } }).sort({ lastActivityAt: -1 }).limit(6).select("name phone status cartValue lastActivityAt").lean(),
     OrderModel.aggregate<{ _id: unknown; name: string; qty: number; revenue: number }>([
       { $match: { createdAt: { $gte: from30 }, status: { $nin: LOST } } },
@@ -62,7 +57,7 @@ export async function getDashboard(lowStockThreshold: number, now = new Date()) 
   // One bar per day, including days with no sales.
   const byDay = new Map(daily.map((d) => [d._id, d]));
   const chart = Array.from({ length: days }, (_, i) => {
-    const key = dhakaDateKey(new Date(from30.getTime() + i * DAY));
+    const key = londonDateKey(new Date(from30.getTime() + NOON + i * DAY));
     return { date: key, revenue: byDay.get(key)?.revenue ?? 0, orders: byDay.get(key)?.orders ?? 0 };
   });
 
@@ -76,7 +71,7 @@ export async function getDashboard(lowStockThreshold: number, now = new Date()) 
     lowStock: lowStock.map((v) => ({ productId: String(v.product._id), name: v.product.name, sku: v.sku, size: v.size, colour: v.colour, stock: v.stock })),
     recentOrders: recentOrders.map((o) => ({
       orderNo: o.orderNo, name: o.customer?.name ?? "", total: o.total, status: o.status, paymentStatus: o.paymentStatus,
-      awaiting: isAwaitingVerification(o), createdAt: o.createdAt.toISOString(),
+      createdAt: o.createdAt.toISOString(),
     })),
     leads: leads.map((l) => ({ id: String(l._id), name: l.name, phone: l.phone, status: l.status, cartValue: l.cartValue, lastActivityAt: l.lastActivityAt.toISOString() })),
     topProducts: topProducts.map((p) => ({ id: String(p._id), name: p.name, qty: p.qty, revenue: p.revenue })),

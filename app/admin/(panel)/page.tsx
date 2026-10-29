@@ -5,7 +5,7 @@ import { requireAdminPage } from "@/server/admin/guard";
 import { getDashboard } from "@/server/services/admin-dashboard";
 import { runAbandonedSweep } from "@/server/services/abandoned";
 import { getSettings } from "@/server/services/settings";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { SalesChart } from "@/components/admin/SalesChart";
 import { ago, Badge, Card, dateTime, OrderStatusBadge, PageHeader, PaymentBadge, StatCard, TableSkeleton } from "@/components/admin/ui";
 
@@ -29,19 +29,19 @@ async function Dashboard({ searchParams }: PageProps<"/admin">) {
 
   return (
     <>
-      <PageHeader title={`Hello, ${admin.name.split(" ")[0]}`} text="Sales are counted by order date (Dhaka time) and exclude cancelled, returned and refunded orders." />
+      <PageHeader title={`Hello, ${admin.name.split(" ")[0]}`} text="Sales are counted by order date (UK time) and exclude cancelled, returned and refunded orders." />
       {denied && <p role="alert" className="mb-6 rounded-md bg-warn/10 px-4 py-3 text-sm text-warn">Your role doesn&apos;t have access to that page.</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Today" value={formatBDT(d.today.revenue)} hint={`${d.today.orders} order${d.today.orders === 1 ? "" : "s"}`} />
-        <StatCard label="Last 7 days" value={formatBDT(d.week.revenue)} hint={`${d.week.orders} orders`} />
-        <StatCard label="Last 30 days" value={formatBDT(d.month.revenue)} hint={`${d.month.orders} orders`} />
-        <StatCard label="Average order (30 d)" value={formatBDT(d.month.aov)} />
+        <StatCard label="Today" value={formatMoney(d.today.revenue)} hint={`${d.today.orders} order${d.today.orders === 1 ? "" : "s"}`} />
+        <StatCard label="Last 7 days" value={formatMoney(d.week.revenue)} hint={`${d.week.orders} orders`} />
+        <StatCard label="Last 30 days" value={formatMoney(d.month.revenue)} hint={`${d.month.orders} orders`} />
+        <StatCard label="Average order (30 d)" value={formatMoney(d.month.aov)} />
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Pending orders" value={String(a.pending)} hint="Confirm or cancel" href="/admin/orders?status=pending" />
-        <StatCard label="Payments to verify" value={String(a.awaitingPayment)} hint="bKash / Nagad Trx IDs" href="/admin/orders?payment=verify" />
+        <StatCard label="Awaiting payment" value={String(a.awaitingPayment)} hint="Checkout started, not paid" href="/admin/orders?payment=awaiting" />
         <StatCard label="To ship" value={String(a.toShip)} hint="Confirmed + processing" href="/admin/orders?status=confirmed,processing" />
         <StatCard label="New messages" value={String(a.newMessages)} href="/admin/messages" />
       </div>
@@ -75,9 +75,9 @@ async function Dashboard({ searchParams }: PageProps<"/admin">) {
                 <li key={o.orderNo} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
                   <Link href={`/admin/orders/${o.orderNo}`} className="font-medium hover:underline">{o.orderNo}</Link>
                   <span className="min-w-0 flex-1 truncate text-muted">{o.name}</span>
-                  <span className="tabular-nums">{formatBDT(o.total)}</span>
+                  <span className="tabular-nums">{formatMoney(o.total)}</span>
                   <OrderStatusBadge status={o.status} />
-                  <PaymentBadge status={o.paymentStatus} awaiting={o.awaiting} />
+                  <PaymentBadge status={o.paymentStatus} />
                   <span className="w-full text-xs text-muted">{dateTime(o.createdAt)}</span>
                 </li>
               ))}
@@ -112,7 +112,7 @@ async function Dashboard({ searchParams }: PageProps<"/admin">) {
                   <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
                     <span className="font-medium">{l.name}</span>
                     <a href={`tel:${l.phone}`} className="text-muted hover:underline">{l.phone}</a>
-                    <span className="ml-auto tabular-nums">{formatBDT(l.cartValue)}</span>
+                    <span className="ml-auto tabular-nums">{formatMoney(l.cartValue)}</span>
                     <Badge tone={l.status === "abandoned" ? "warn" : "info"}>{l.status === "abandoned" ? "Abandoned" : "In cart"}</Badge>
                     <span className="w-full text-xs text-muted">Active {ago(l.lastActivityAt)}</span>
                   </li>

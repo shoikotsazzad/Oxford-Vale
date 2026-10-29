@@ -23,7 +23,7 @@ export function fabricFamily(fabric: string): Family {
 const FABRIC_LINE: Record<Family, string> = {
   wool: "Wool gives it a soft drape, natural warmth and a shape that holds through a long day.",
   tweed: "The tweed has a dense, textured weave that is warm, hard-wearing and rich in character.",
-  cotton: "The cotton is breathable and comfortable, a dependable choice for Dhaka's warmer months.",
+  cotton: "The cotton is breathable and comfortable, a dependable choice for warmer days.",
   linen: "Linen keeps it light and cool, with the relaxed texture that softens with every wear.",
   leather: "Cut from leather that is supple from the first wear and develops a richer patina with age.",
   suede: "Soft suede adds a warm, matte texture that pairs easily with tailoring or denim.",
@@ -69,7 +69,7 @@ const TAG_LINE: Record<string, string> = {
   "New Season": "New this season.",
   Heritage: "Part of our Heritage line, inspired by traditional English dress.",
   Winter: "A cold-weather favourite for the winter months.",
-  Summer: "Light enough for the Bangladeshi summer.",
+  Summer: "Light enough for summer days in the city.",
   Limited: "Made in a limited run.",
 };
 

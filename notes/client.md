@@ -2,41 +2,54 @@
 
 All business details below were supplied by the developer for a portfolio demo. Items marked "placeholder" in the brief are not real.
 
+Updated 2026-10-28: the brand moved to a UK setting (London, Savile Row), English only, prices in US dollars,
+Stripe + PayPal payments. Details below are the developer's UK placeholders (fictional; safe for a portfolio).
+
 ## Business
 - Brand: Oxford Vale — English heritage menswear (suits, blazers, outerwear, waistcoats, shirts, trousers, knitwear, ties, accessories, caps, shoes)
 - Tagline: English heritage for a modern generation
 - Legal name (invoices): Oxford Vale Menswear Ltd. (placeholder)
-- Trade licence no.: TRAD/DNCC/000000/2026 (placeholder)
-- TIN: 000000000000 (placeholder)
-- BIN (VAT): 000000000-0000 (placeholder)
+- Company registration no.: 00000000 (placeholder, Companies House format)
+- VAT registration no.: GB 000 0000 00 (placeholder)
+- Registered office: 14 Savile Row, London W1S 3PR (placeholder: real street, fictional number)
 - Logo: none given (typographic wordmark)
+- Legal footer: "Oxford Vale Menswear Ltd. is registered in England and Wales (company no. 00000000). Registered office: 14 Savile Row, London W1S 3PR. VAT no. GB 000 0000 00."
 
 ## Contact
-- Customer care phone: 01700-000001
-- WhatsApp: 01700-000002
+- Customer care phone: 020 7946 0001 (Ofcom drama range, never a real number)
+- Freephone: 0800 000 0001
 - Email: hello@oxfordvale.example
 - Support email: support@oxfordvale.example
-- Admin/order notifications email: orders@oxfordvale.example
+- Orders email (admin notifications): orders@oxfordvale.example
 - Website: www.oxfordvale.example
+- No WhatsApp number given (WhatsApp buttons replaced by call / email)
 
-## Location & hours
-- Showroom and office: House 12, Road 27, Block A, Gulshan 1, Dhaka 1212, Bangladesh
+## Location & hours (UK time, GMT/BST)
+- Showroom and head office: 14 Savile Row, Mayfair, London W1S 3PR, United Kingdom
 - Dispatch from: same address
-- Hours: Saturday to Thursday 10:00 AM – 9:00 PM · Friday 2:00 PM – 9:00 PM
+- Hours: Monday to Friday 9:00 AM – 6:00 PM · Saturday 10:00 AM – 5:00 PM · Sunday and bank holidays closed
 
 ## Offerings
-- 150 products in 11 categories: `notes/assets/products.csv` (prices in BDT, sale prices, colours, size ranges, tags, fabric, stock per size). Notes on sizes and images in `notes/brief.md`.
+- 150 products in 11 categories: `notes/assets/products.csv` (original prices in BDT; the store shows US dollars via the per-category ladder in `scripts/seed/usd.ts`, approved 2026-10-28). Notes on sizes and images in `notes/brief.md`.
 
-## Payment details
-- bKash merchant: 01700-000003
-- Nagad merchant: 01700-000004
+## Payments
+- Accepted: Visa, Mastercard, American Express, PayPal, Apple Pay, Google Pay, Klarna (Stripe Checkout + PayPal)
+- Currency shown: USD (developer's choice for the portfolio), VAT included in displayed prices
 - Bank account name: Oxford Vale Menswear Ltd.
-- Bank account no.: 0000000000000
-- Bank and branch: Sample Bank, Gulshan 2 Branch (placeholder)
+- Sort code: 00-00-00 (placeholder) · Account no.: 00000000 (placeholder)
+- Bank: Sample Bank, Mayfair branch (placeholder)
+
+## Delivery and returns
+- UK standard: 3–5 working days, free over $125 (brief: free over £100)
+- UK next day: $8.95 (brief: £6.95), order before 2 PM
+- International: Europe and rest of world, rates shown at checkout
+- Returns: 30 days, free UK returns
+- Invoice footer: "Thank you for shopping with Oxford Vale. For returns within 30 days, keep this invoice and contact support@oxfordvale.example."
 
 ## Socials
 - Facebook: facebook.com/oxfordvale
 - Instagram: instagram.com/oxfordvale
+- X: x.com/oxfordvale
 - YouTube: youtube.com/@oxfordvale
 
 ## Domain

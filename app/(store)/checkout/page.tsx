@@ -9,6 +9,7 @@ import { getZones } from "@/server/services/delivery";
 import { OrderError, priceCart, quote } from "@/server/services/order";
 import { LeadModel, UserModel } from "@/models";
 import { buildMetadata } from "@/lib/seo";
+import { HOME_COUNTRY } from "@/lib/address";
 import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -50,10 +51,10 @@ async function CheckoutContent() {
   ]);
   const savedAddresses = (account?.addresses ?? []).map((a) => ({
     id: String(a._id), label: a.label ?? "Home", isDefault: Boolean(a.isDefault), name: a.name, phone: a.phone,
-    division: a.division, district: a.district, upazila: a.upazila, addressLine: a.addressLine,
+    line1: a.line1, line2: a.line2 ?? "", city: a.city, county: a.county ?? "", postcode: a.postcode ?? "", country: a.country,
   }));
   const first = savedAddresses.find((a) => a.isDefault) ?? savedAddresses[0];
-  const { coupon: _c, ...initialQuote } = await quote(priced.lines, rules, { address: first ?? null });
+  const { coupon: _c, ...initialQuote } = await quote(priced.lines, rules, { delivery: { country: first?.country ?? HOME_COUNTRY } });
 
   return (
     <>
@@ -65,7 +66,7 @@ async function CheckoutContent() {
         contact={{ name: user?.name ?? lead?.name ?? "", phone: user?.phone || lead?.phone || "", email: user?.email ?? lead?.email ?? "" }}
         savedAddresses={savedAddresses}
         loggedIn={Boolean(user)}
-        payments={{ cod: settings.payments.cod, sslcommerz: settings.payments.sslcommerz, bkash: settings.payments.bkash.enabled, nagad: settings.payments.nagad.enabled }}
+        payments={settings.payments}
       />
     </>
   );

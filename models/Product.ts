@@ -14,7 +14,7 @@ const ProductSchema = new Schema(
     fabric: { type: String, default: "" },
     careNotes: { type: String, default: "" },
     images: { type: [ImageSchema], default: [] },
-    price: { type: Number, required: true, min: 0 }, // whole taka
+    price: { type: Number, required: true, min: 0 }, // cents (USD)
     salePrice: { type: Number, min: 0 },
     status: { type: String, enum: ["draft", "active", "archived"], default: "active", index: true },
     sizeType: { type: String, enum: SIZE_TYPES, required: true },

@@ -1,20 +1,20 @@
 // Message templates (pure: no DB, no env), so they are easy to test and preview.
-// Emails have a plain-text body (always) and a simple inline-styled HTML body. SMS stay under ~2 parts in English.
-import { formatBDT } from "@/lib/money";
+// Emails have a plain-text body (always) and a simple inline-styled HTML body. Customer updates are email only.
+import { formatMoneyExact as formatMoney } from "@/lib/money";
+import { telHref } from "@/lib/phone";
 
-export type Store = { name: string; phone: string; whatsapp: string; email: string; url: string; bkash: string; nagad: string };
+/** legal: the "registered in England and Wales…" line for the email footer. */
+export type Store = { name: string; phone: string; email: string; url: string; legal: string };
 export type OrderLine = { name: string; size?: string | null; colour?: string | null; qty: number; lineTotal: number };
 export type OrderInfo = {
   orderNo: string; customerName: string; phone: string; email: string; items: OrderLine[];
   subtotal: number; discount: number; couponCode?: string | null; deliveryName: string; deliveryFee: number; total: number;
-  paymentMethod: "cod" | "sslcommerz" | "bkash" | "nagad"; paymentStatus: string; etaMin: number; etaMax: number;
+  paymentMethod: "stripe" | "paypal"; paymentStatus: string; etaMin: number; etaMax: number;
   address: string; note?: string; link: string; adminLink: string; courier?: string; trackingNo?: string;
 };
 export type Email = { subject: string; text: string; html: string };
 
-const METHOD = { cod: "Cash on delivery", sslcommerz: "Card / mobile banking (SSLCommerz)", bkash: "bKash", nagad: "Nagad" } as const;
-// Plain "Tk" in SMS: ৳ forces Unicode SMS (70 chars per part instead of 160).
-const tk = (n: number) => `Tk ${new Intl.NumberFormat("en-IN").format(n)}`;
+const METHOD = { stripe: "Card, Apple Pay, Google Pay or Klarna (Stripe)", paypal: "PayPal" } as const;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const variant = (l: OrderLine) => [l.size && l.size !== "One Size" ? l.size : "", l.colour].filter(Boolean).join(", ");
 
@@ -28,74 +28,59 @@ function layout(store: Store, title: string, body: string, cta?: { label: string
 <tr><td style="padding:16px 28px 8px;font-size:14px;line-height:1.6">${body}</td></tr>
 ${cta ? `<tr><td style="padding:8px 28px 28px"><a href="${esc(cta.href)}" style="display:inline-block;background:#111111;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:12px;letter-spacing:2px;text-transform:uppercase">${esc(cta.label)}</a></td></tr>` : ""}
 </table>
-<p style="max-width:560px;font-size:12px;color:#7A746B;line-height:1.6;margin:16px auto 0">${esc(store.name)} · ${esc(store.phone)} · WhatsApp ${esc(store.whatsapp)} · <a href="mailto:${esc(store.email)}" style="color:#7A746B">${esc(store.email)}</a></p>
+<p style="max-width:560px;font-size:12px;color:#6B655C;line-height:1.6;margin:16px auto 0">${esc(store.name)} · ${esc(store.phone)} · <a href="mailto:${esc(store.email)}" style="color:#6B655C">${esc(store.email)}</a>${store.legal ? `<br>${esc(store.legal)}` : ""}</p>
 </td></tr></table></body></html>`;
 }
 
 function itemsHtml(o: OrderInfo) {
   const rows = o.items
-    .map((l) => `<tr><td style="padding:6px 0;border-bottom:1px solid #E2DDD3">${esc(l.name)}${variant(l) ? `<br><span style="color:#7A746B;font-size:12px">${esc(variant(l))}</span>` : ""}</td><td style="padding:6px 0;border-bottom:1px solid #E2DDD3;text-align:center">${l.qty}</td><td style="padding:6px 0;border-bottom:1px solid #E2DDD3;text-align:right">${formatBDT(l.lineTotal)}</td></tr>`)
+    .map((l) => `<tr><td style="padding:6px 0;border-bottom:1px solid #E2DDD3">${esc(l.name)}${variant(l) ? `<br><span style="color:#6B655C;font-size:12px">${esc(variant(l))}</span>` : ""}</td><td style="padding:6px 0;border-bottom:1px solid #E2DDD3;text-align:center">${l.qty}</td><td style="padding:6px 0;border-bottom:1px solid #E2DDD3;text-align:right">${formatMoney(l.lineTotal)}</td></tr>`)
     .join("");
-  const line = (label: string, value: string, bold = false) => `<tr><td colspan="2" style="padding:4px 0;${bold ? "font-weight:bold" : "color:#7A746B"}">${esc(label)}</td><td style="padding:4px 0;text-align:right;${bold ? "font-weight:bold" : ""}">${value}</td></tr>`;
+  const line = (label: string, value: string, bold = false) => `<tr><td colspan="2" style="padding:4px 0;${bold ? "font-weight:bold" : "color:#6B655C"}">${esc(label)}</td><td style="padding:4px 0;text-align:right;${bold ? "font-weight:bold" : ""}">${value}</td></tr>`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;margin:12px 0">${rows}
-${line("Subtotal", formatBDT(o.subtotal))}${o.discount ? line(`Discount${o.couponCode ? ` (${o.couponCode})` : ""}`, `−${formatBDT(o.discount)}`) : ""}
-${line(`Delivery · ${o.deliveryName}`, o.deliveryFee ? formatBDT(o.deliveryFee) : "Free")}${line("Total", formatBDT(o.total), true)}</table>`;
+${line("Subtotal", formatMoney(o.subtotal))}${o.discount ? line(`Discount${o.couponCode ? ` (${o.couponCode})` : ""}`, `−${formatMoney(o.discount)}`) : ""}
+${line(`Delivery · ${o.deliveryName}`, o.deliveryFee ? formatMoney(o.deliveryFee) : "Free")}${line("Total", formatMoney(o.total), true)}</table>`;
 }
 
 function itemsText(o: OrderInfo) {
   return [
-    ...o.items.map((l) => `- ${l.qty} × ${l.name}${variant(l) ? ` (${variant(l)})` : ""}: ${formatBDT(l.lineTotal)}`),
-    `Subtotal: ${formatBDT(o.subtotal)}`,
-    ...(o.discount ? [`Discount${o.couponCode ? ` (${o.couponCode})` : ""}: −${formatBDT(o.discount)}`] : []),
-    `Delivery (${o.deliveryName}): ${o.deliveryFee ? formatBDT(o.deliveryFee) : "Free"}`,
-    `Total: ${formatBDT(o.total)}`,
+    ...o.items.map((l) => `- ${l.qty} × ${l.name}${variant(l) ? ` (${variant(l)})` : ""}: ${formatMoney(l.lineTotal)}`),
+    `Subtotal: ${formatMoney(o.subtotal)}`,
+    ...(o.discount ? [`Discount${o.couponCode ? ` (${o.couponCode})` : ""}: −${formatMoney(o.discount)}`] : []),
+    `Delivery (${o.deliveryName}): ${o.deliveryFee ? formatMoney(o.deliveryFee) : "Free"}`,
+    `Total: ${formatMoney(o.total)}`,
   ].join("\n");
 }
 
-function nextStep(o: OrderInfo, store: Store) {
-  if (o.paymentStatus === "paid") return "Your payment is received. We'll call you before dispatch.";
-  if (o.paymentMethod === "cod") return `Pay ${formatBDT(o.total)} in cash when your order arrives. We'll call you to confirm before dispatch.`;
-  if (o.paymentMethod === "bkash" || o.paymentMethod === "nagad") {
-    const label = METHOD[o.paymentMethod];
-    const number = o.paymentMethod === "bkash" ? store.bkash : store.nagad;
-    return `Send ${formatBDT(o.total)} with ${label} (Send Money) to ${number}, then enter the transaction ID on your order page. We confirm the order once we've checked the payment.`;
-  }
-  return "Your order is reserved. If the online payment didn't go through, you can try again or switch to cash on delivery from your order page.";
+function nextStep(o: OrderInfo) {
+  if (o.paymentStatus === "paid") return "Your payment is confirmed and we're preparing your order. We'll email you when it ships.";
+  return "Your payment isn't complete yet. Finish paying from your order page (card, Apple Pay, Google Pay, Klarna or PayPal) to confirm the order.";
 }
 
 export function orderPlacedEmail(o: OrderInfo, store: Store): Email {
-  const step = nextStep(o, store);
+  const step = nextStep(o);
   const eta = `Estimated delivery: ${o.etaMin}–${o.etaMax} working days to ${o.address}.`;
   return {
     subject: `Order ${o.orderNo} received: thank you, ${o.customerName.split(" ")[0]}`,
-    text: `Hello ${o.customerName},\n\nThank you for your order ${o.orderNo}.\n\n${itemsText(o)}\n\nPayment: ${METHOD[o.paymentMethod]}\n${step}\n${eta}\n\nView or track your order: ${o.link}\n\nQuestions? Reply to this email, call ${store.phone} or WhatsApp ${store.whatsapp}.\n\n${store.name}`,
+    text: `Hello ${o.customerName},\n\nThank you for your order ${o.orderNo}.\n\n${itemsText(o)}\n\nPayment: ${METHOD[o.paymentMethod]}\n${step}\n${eta}\n\nView or track your order: ${o.link}\n\nQuestions? Reply to this email or call ${store.phone}.\n\n${store.name}`,
     html: layout(
       store,
       "Thank you for your order",
       `<p style="margin:0 0 8px">Hello ${esc(o.customerName)},</p><p style="margin:0 0 8px">We've received your order <strong>${esc(o.orderNo)}</strong>.</p>${itemsHtml(o)}
-<p style="margin:0 0 8px"><strong>Payment:</strong> ${esc(METHOD[o.paymentMethod])}<br>${esc(step)}</p><p style="margin:0;color:#7A746B">${esc(eta)}</p>`,
+<p style="margin:0 0 8px"><strong>Payment:</strong> ${esc(METHOD[o.paymentMethod])}<br>${esc(step)}</p><p style="margin:0;color:#6B655C">${esc(eta)}</p>`,
       { label: "View your order", href: o.link },
     ),
   };
 }
 
-export function orderPlacedSms(o: OrderInfo, store: Store) {
-  const pay =
-    o.paymentStatus === "paid" ? "Paid." :
-    o.paymentMethod === "cod" ? `Pay ${tk(o.total)} on delivery.` :
-    o.paymentMethod === "bkash" || o.paymentMethod === "nagad" ? `Send ${tk(o.total)} to ${o.paymentMethod === "bkash" ? `bKash ${store.bkash}` : `Nagad ${store.nagad}`} and submit the TrxID on your order page.` :
-    `Total ${tk(o.total)}.`;
-  return `${store.name}: order ${o.orderNo} received. ${pay} Track: ${o.link}`;
-}
-
 export function paymentReceivedEmail(o: OrderInfo, store: Store): Email {
   return {
     subject: `Payment received for order ${o.orderNo}`,
-    text: `Hello ${o.customerName},\n\nWe've received your payment of ${formatBDT(o.total)} (${METHOD[o.paymentMethod]}) for order ${o.orderNo}. Your order is confirmed and we're getting it ready.\n\nTrack your order: ${o.link}\n\n${store.name}`,
+    text: `Hello ${o.customerName},\n\nWe've received your payment of ${formatMoney(o.total)} (${METHOD[o.paymentMethod]}) for order ${o.orderNo}. Your order is confirmed and we're getting it ready.\n\nTrack your order: ${o.link}\n\n${store.name}`,
     html: layout(
       store,
       "Payment received",
-      `<p style="margin:0 0 8px">Hello ${esc(o.customerName)},</p><p style="margin:0">We've received your payment of <strong>${formatBDT(o.total)}</strong> (${esc(METHOD[o.paymentMethod])}) for order <strong>${esc(o.orderNo)}</strong>. Your order is confirmed and we're getting it ready.</p>`,
+      `<p style="margin:0 0 8px">Hello ${esc(o.customerName)},</p><p style="margin:0">We've received your payment of <strong>${formatMoney(o.total)}</strong> (${esc(METHOD[o.paymentMethod])}) for order <strong>${esc(o.orderNo)}</strong>. Your order is confirmed and we're getting it ready.</p>`,
       { label: "Track your order", href: o.link },
     ),
   };
@@ -103,28 +88,22 @@ export function paymentReceivedEmail(o: OrderInfo, store: Store): Email {
 
 export function orderShippedEmail(o: OrderInfo, store: Store): Email {
   const via = `${o.courier}${o.trackingNo ? ` (tracking number ${o.trackingNo})` : ""}`;
-  const cash = o.paymentMethod === "cod" && o.paymentStatus !== "paid" ? `Please keep ${formatBDT(o.total)} ready for the courier.` : "";
   return {
     subject: `Order ${o.orderNo} is on its way`,
-    text: `Hello ${o.customerName},\n\nYour order ${o.orderNo} has been shipped with ${via}. Expected in ${o.etaMin}–${o.etaMax} working days.\n${cash}\n\nTrack your order: ${o.link}\n\n${store.name}`,
+    text: `Hello ${o.customerName},\n\nYour order ${o.orderNo} has been shipped with ${via}. Expected in ${o.etaMin}–${o.etaMax} working days.\n\nTrack your order: ${o.link}\n\n${store.name}`,
     html: layout(
       store,
       "Your order is on its way",
-      `<p style="margin:0 0 8px">Hello ${esc(o.customerName)},</p><p style="margin:0 0 8px">Order <strong>${esc(o.orderNo)}</strong> has been shipped with ${esc(via)}. Expected in ${o.etaMin}–${o.etaMax} working days.</p>${cash ? `<p style="margin:0">${esc(cash)}</p>` : ""}`,
+      `<p style="margin:0 0 8px">Hello ${esc(o.customerName)},</p><p style="margin:0 0 8px">Order <strong>${esc(o.orderNo)}</strong> has been shipped with ${esc(via)}. Expected in ${o.etaMin}–${o.etaMax} working days.</p>`,
       { label: "Track your order", href: o.link },
     ),
   };
 }
 
-export function orderShippedSms(o: OrderInfo, store: Store) {
-  const cash = o.paymentMethod === "cod" && o.paymentStatus !== "paid" ? ` Keep ${tk(o.total)} ready.` : "";
-  return `${store.name}: order ${o.orderNo} shipped with ${o.courier}${o.trackingNo ? `, tracking ${o.trackingNo}` : ""}.${cash} Track: ${o.link}`;
-}
-
 export function adminNewOrderEmail(o: OrderInfo, store: Store): Email {
   const pay = `${METHOD[o.paymentMethod]} · ${o.paymentStatus}`;
   return {
-    subject: `New order ${o.orderNo}: ${formatBDT(o.total)} (${METHOD[o.paymentMethod]})`,
+    subject: `New order ${o.orderNo}: ${formatMoney(o.total)} (${METHOD[o.paymentMethod]})`,
     text: `New order ${o.orderNo}\n\nCustomer: ${o.customerName}, ${o.phone}${o.email ? `, ${o.email}` : ""}\nDeliver to: ${o.address}\nPayment: ${pay}\n${o.note ? `Customer note: ${o.note}\n` : ""}\n${itemsText(o)}\n\nOpen in admin: ${o.adminLink}`,
     html: layout(
       store,
@@ -152,18 +131,18 @@ export function adminContactEmail(m: ContactInfo, store: Store): Email {
 export type AbandonedLead = { name: string; phone: string; email?: string | null; cartValue: number; items: string[]; lastActivityAt: Date };
 export function abandonedDigestEmail(leads: AbandonedLead[], minutes: number, adminLink: string, store: Store): Email {
   const total = leads.reduce((n, l) => n + l.cartValue, 0);
-  const subject = `${leads.length} abandoned cart${leads.length === 1 ? "" : "s"} worth ${formatBDT(total)}`;
-  const when = (d: Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Dhaka" }).format(d);
+  const subject = `${leads.length} abandoned cart${leads.length === 1 ? "" : "s"} worth ${formatMoney(total)}`;
+  const when = (d: Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" }).format(d);
   return {
     subject,
-    text: `These shoppers left items in their bag for over ${minutes} minutes. A quick call or WhatsApp often saves the sale.\n\n${leads
-      .map((l) => `${l.name}, ${l.phone}${l.email ? `, ${l.email}` : ""}: ${formatBDT(l.cartValue)} (last active ${when(l.lastActivityAt)})\n  ${l.items.join("; ")}`)
+    text: `These shoppers left items in their bag for over ${minutes} minutes. A quick call or email often saves the sale.\n\n${leads
+      .map((l) => `${l.name}, ${l.phone}${l.email ? `, ${l.email}` : ""}: ${formatMoney(l.cartValue)} (last active ${when(l.lastActivityAt)})\n  ${l.items.join("; ")}`)
       .join("\n\n")}\n\nAll leads: ${adminLink}`,
     html: layout(
       store,
       subject,
-      `<p style="margin:0 0 12px">These shoppers left items in their bag for over ${minutes} minutes. A quick call or WhatsApp often saves the sale.</p>${leads
-        .map((l) => `<p style="margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid #E2DDD3"><strong>${esc(l.name)}</strong> · <a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>${l.email ? ` · ${esc(l.email)}` : ""}<br><strong>${formatBDT(l.cartValue)}</strong> · last active ${esc(when(l.lastActivityAt))}<br><span style="color:#7A746B">${esc(l.items.join("; "))}</span></p>`)
+      `<p style="margin:0 0 12px">These shoppers left items in their bag for over ${minutes} minutes. A quick call or email often saves the sale.</p>${leads
+        .map((l) => `<p style="margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid #E2DDD3"><strong>${esc(l.name)}</strong> · <a href="${esc(telHref(l.phone))}">${esc(l.phone)}</a>${l.email ? ` · ${esc(l.email)}` : ""}<br><strong>${formatMoney(l.cartValue)}</strong> · last active ${esc(when(l.lastActivityAt))}<br><span style="color:#6B655C">${esc(l.items.join("; "))}</span></p>`)
         .join("")}`,
       { label: "Open leads", href: adminLink },
     ),

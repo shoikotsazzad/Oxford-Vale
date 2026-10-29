@@ -2,14 +2,14 @@ import { z } from "zod";
 import { emailSchema, nameSchema, phoneSchema } from "./common";
 import { addressSchema } from "./address";
 import { passwordSchema } from "./auth";
-
-export const PAYMENT_OPTIONS = ["cod", "sslcommerz", "bkash", "nagad"] as const;
+import { PAYMENT_METHODS } from "@/models/enums";
 
 export const checkoutSchema = z
   .object({
     contact: z.object({ name: nameSchema, phone: phoneSchema, email: emailSchema }),
     address: addressSchema,
-    paymentMethod: z.enum(PAYMENT_OPTIONS, "Choose a payment method."),
+    deliveryOption: z.string().regex(/^[a-f0-9]{24}$/i, "Choose a delivery option."),
+    paymentMethod: z.enum(PAYMENT_METHODS, "Choose a payment method."),
     couponCode: z.string().trim().max(30).optional().default(""),
     note: z.string().trim().max(500, "Note is too long.").optional().default(""),
     createAccount: z.boolean().optional().default(false),
@@ -25,15 +25,8 @@ export const checkoutSchema = z
 
 export type CheckoutInput = z.input<typeof checkoutSchema>;
 
-/** bKash / Nagad transaction IDs are 8–10 letters/digits. */
-export const manualPaymentSchema = z.object({
-  orderNo: z.string().regex(/^OV-\d{6}-\d{4}$/),
-  key: z.string().min(10).max(40),
-  trxId: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{8,12}$/, "Enter the transaction ID from your bKash/Nagad message (8–12 letters and numbers)."),
-  senderNumber: phoneSchema,
-});
-
 export const trackSchema = z.object({
   orderNo: z.string().trim().toUpperCase().regex(/^OV-\d{6}-\d{4}$/, "Order numbers look like OV-261022-0001."),
-  phone: phoneSchema,
+  /** The phone or email used at checkout. */
+  contact: z.string().trim().min(3, "Enter the phone number or email used at checkout.").max(120),
 });

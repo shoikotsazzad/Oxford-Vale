@@ -1,4 +1,5 @@
-// Business details. The seed copies these into the Setting document, which the admin can then edit.
+// Business details (fictional UK brand for a portfolio; registration numbers and bank details are placeholders).
+// The seed copies these into the Setting document, which the admin can then edit.
 // The storefront reads the Setting document; these values are the fallback when the database is empty.
 // Source: notes/client.md. Items marked "placeholder" there are not real.
 
@@ -6,76 +7,77 @@ export const site = {
   name: "Oxford Vale",
   tagline: "English heritage for a modern generation",
   description:
-    "Oxford Vale is an English heritage menswear brand in Dhaka: tailored suits, outerwear, waistcoats, shirts, caps and shoes, delivered across Bangladesh with cash on delivery.",
+    "Oxford Vale is an English heritage menswear brand from Savile Row, London: tailored suits, overcoats, waistcoats, shirts, flat caps and shoes, delivered across the UK and worldwide.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000",
-  lang: "en", // default UI language; Bangla is a toggle
-  locale: "en_US",
+  domain: "www.oxfordvale.example", // placeholder
+  lang: "en-GB",
+  locale: "en_GB",
   ogImage: "/brand/og-image.jpg",
 
-  // Phone in international format. WhatsApp: digits only, with country code.
-  phone: "+8801700000001",
-  phoneDisplay: "01700-000001",
-  whatsapp: "8801700000002",
-  whatsappDisplay: "01700-000002",
-  whatsappGreeting: "Hello Oxford Vale, I have a question about a product.",
+  // Fictional numbers: 020 7946 xxxx is reserved by Ofcom for drama, so it can never reach a real person.
+  phone: "02079460001",
+  phoneDisplay: "020 7946 0001",
+  freephone: "08000000001",
+  freephoneDisplay: "0800 000 0001",
   email: "hello@oxfordvale.example",
   supportEmail: "support@oxfordvale.example",
   ordersEmail: "orders@oxfordvale.example",
 
   legal: {
     name: "Oxford Vale Menswear Ltd.", // placeholder
-    tradeLicence: "TRAD/DNCC/000000/2026", // placeholder
-    tin: "000000000000", // placeholder
-    bin: "000000000-0000", // placeholder
+    companyNo: "00000000", // placeholder (Companies House, 8 digits)
+    vatNo: "GB 000 0000 00", // placeholder
+    registeredOffice: "14 Savile Row, London W1S 3PR", // placeholder number on a real street
   },
 
+  // Showroom, head office and dispatch.
   address: {
-    line: "House 12, Road 27, Block A",
-    area: "Gulshan 1",
-    city: "Dhaka",
-    postalCode: "1212",
-    country: "Bangladesh",
+    line: "14 Savile Row",
+    area: "Mayfair",
+    city: "London",
+    postalCode: "W1S 3PR",
+    country: "United Kingdom",
   },
   geo: null as { lat: number; lng: number } | null,
   mapUrl: "",
   mapEmbedUrl: "",
 
-  // Days: Mo Tu We Th Fr Sa Su. Times in 24h (for JSON-LD).
+  // Days: Mo Tu We Th Fr Sa Su. Times in 24h, UK time (for JSON-LD).
   hours: [
-    { days: ["Sa", "Su", "Mo", "Tu", "We", "Th"], opens: "10:00", closes: "21:00" },
-    { days: ["Fr"], opens: "14:00", closes: "21:00" },
+    { days: ["Mo", "Tu", "We", "Th", "Fr"], opens: "09:00", closes: "18:00" },
+    { days: ["Sa"], opens: "10:00", closes: "17:00" },
   ],
   hoursText: [
-    { label: "Saturday – Thursday", value: "10:00 AM – 9:00 PM" },
-    { label: "Friday", value: "2:00 PM – 9:00 PM" },
+    { label: "Monday – Friday", value: "9:00 AM – 6:00 PM" },
+    { label: "Saturday", value: "10:00 AM – 5:00 PM" },
+    { label: "Sunday & bank holidays", value: "Closed" },
   ],
 
   socials: {
     facebook: "https://facebook.com/oxfordvale",
     instagram: "https://instagram.com/oxfordvale",
+    x: "https://x.com/oxfordvale",
     youtube: "https://youtube.com/@oxfordvale",
-    tiktok: "",
   },
 
-  payments: {
-    bkashNumber: "01700-000003",
-    nagadNumber: "01700-000004",
-  },
+  paymentBrands: ["Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "Google Pay", "Klarna"],
   bank: {
     accountName: "Oxford Vale Menswear Ltd.",
-    accountNo: "0000000000000", // placeholder
-    bankBranch: "Sample Bank, Gulshan 2 Branch", // placeholder
+    sortCode: "00-00-00", // placeholder
+    accountNo: "00000000", // placeholder
+    bank: "Sample Bank, Mayfair branch", // placeholder
   },
 
   schemaType: "ClothingStore",
-  priceRange: "৳৳৳",
+  priceRange: "$$$",
+  currency: "USD",
 
-  // Delivery defaults (approved in notes/plan.md §9). Editable in admin.
-  freeDeliveryThreshold: 10000,
+  // Delivery: amounts in cents. Free UK standard delivery over $125. Editable in admin.
+  freeDeliveryThreshold: 12500,
   abandonedAfterMinutes: 60,
   lowStockThreshold: 5,
 
-  announcement: { text: "Free delivery across Bangladesh on orders over ৳10,000", link: "/shipping-policy" },
+  announcement: { text: "Free UK delivery on orders over $125 · Free 30-day UK returns", link: "/shipping-policy" },
   hero: {
     eyebrow: "New collection",
     title: "OXFORD VALE",
@@ -94,7 +96,7 @@ export const site = {
     image: "/brand/new-season.jpg",
     cta: { label: "Shop New Season", href: "/collections/new-season" },
   },
-  invoiceFooter: "Thank you for shopping with Oxford Vale. Exchanges and returns within 14 days of delivery.",
+  invoiceFooter: "Thank you for shopping with Oxford Vale. For returns within 30 days, keep this invoice and contact support@oxfordvale.example.",
 };
 
 export type Site = typeof site;

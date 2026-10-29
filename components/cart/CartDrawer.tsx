@@ -5,7 +5,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { ButtonLink } from "@/components/ui/Button";
 import { CloseIcon } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { useCart } from "./CartProvider";
 import { CartLines, CartNotices, FreeDeliveryBar } from "./CartLines";
 
@@ -33,7 +33,7 @@ export function CartDrawer() {
 
   return (
     <div className={`fixed inset-0 z-50 ${drawerOpen ? "" : "pointer-events-none"}`} aria-hidden={!drawerOpen}>
-      <div className={`absolute inset-0 bg-ink/40 transition-opacity ${drawerOpen ? "opacity-100" : "opacity-0"}`} onClick={closeDrawer} />
+      <div className={`absolute inset-0 bg-black/40 transition-opacity ${drawerOpen ? "opacity-100" : "opacity-0"}`} onClick={closeDrawer} />
       <aside
         role="dialog"
         aria-modal="true"
@@ -67,7 +67,7 @@ export function CartDrawer() {
             <div className="border-t border-line p-5">
               <div className="flex items-baseline justify-between">
                 <span className="label">{t.cart.subtotal}</span>
-                <span className="text-lg">{formatBDT(view.subtotal)}</span>
+                <span className="text-lg">{formatMoney(view.subtotal)}</span>
               </div>
               <p className="mt-1 text-xs text-muted">{t.cart.deliveryNote}</p>
               <div className="mt-4 grid grid-cols-2 gap-3">

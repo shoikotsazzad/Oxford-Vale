@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 
 type Point = { date: string; revenue: number; orders: number };
 
@@ -8,11 +8,15 @@ const day = (iso: string, opts: Intl.DateTimeFormatOptions) => new Intl.DateTime
 
 /** Round the axis top up to a "nice" number so gridline labels read cleanly. */
 function niceMax(v: number) {
-  if (v <= 0) return 1000;
+  if (v <= 0) return 100_000; // cents
   const mag = 10 ** Math.floor(Math.log10(v));
   return [1, 2, 2.5, 5, 10].map((m) => m * mag).find((m) => m >= v)!;
 }
-const compact = (n: number) => (n >= 100_000 ? `৳${(n / 100_000).toFixed(n % 100_000 ? 1 : 0)}L` : n >= 1000 ? `৳${Math.round(n / 1000)}k` : `৳${n}`);
+/** Axis labels from cents: $1.2k, $850. */
+const compact = (cents: number) => {
+  const d = cents / 100;
+  return d >= 1000 ? `$${(d / 1000).toFixed(d % 1000 ? 1 : 0)}k` : `$${Math.round(d)}`;
+};
 
 /** Daily sales, one bar per day. Single series: one ink colour, no legend; hover/focus shows the exact numbers. */
 export function SalesChart({ data }: { data: Point[] }) {
@@ -39,7 +43,7 @@ export function SalesChart({ data }: { data: Point[] }) {
               onMouseEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onBlur={() => setActive(null)}
-              aria-label={`${day(d.date, { day: "numeric", month: "short" })}: ${formatBDT(d.revenue)} from ${d.orders} order${d.orders === 1 ? "" : "s"}`}
+              aria-label={`${day(d.date, { day: "numeric", month: "short" })}: ${formatMoney(d.revenue)} from ${d.orders} order${d.orders === 1 ? "" : "s"}`}
             >
               <span
                 className={`block w-full rounded-t-[4px] transition-colors ${active === i ? "bg-ink" : "bg-ink/75"} group-focus-visible:ring-2 group-focus-visible:ring-ink group-focus-visible:ring-offset-2`}
@@ -55,7 +59,7 @@ export function SalesChart({ data }: { data: Point[] }) {
             style={{ left: `calc(3rem + (100% - 3rem) * ${(active + 0.5) / data.length})` }}
           >
             <p className="text-white/60">{day(point.date, { weekday: "short", day: "numeric", month: "short" })}</p>
-            <p className="mt-0.5 font-medium tabular-nums">{formatBDT(point.revenue)}</p>
+            <p className="mt-0.5 font-medium tabular-nums">{formatMoney(point.revenue)}</p>
             <p className="text-white/60">{point.orders} order{point.orders === 1 ? "" : "s"}</p>
           </div>
         )}
@@ -69,7 +73,7 @@ export function SalesChart({ data }: { data: Point[] }) {
       <table className="sr-only">
         <thead><tr><th>Date</th><th>Sales</th><th>Orders</th></tr></thead>
         <tbody>
-          {data.map((d) => <tr key={d.date}><td>{d.date}</td><td>{formatBDT(d.revenue)}</td><td>{d.orders}</td></tr>)}
+          {data.map((d) => <tr key={d.date}><td>{d.date}</td><td>{formatMoney(d.revenue)}</td><td>{d.orders}</td></tr>)}
         </tbody>
       </table>
     </figure>

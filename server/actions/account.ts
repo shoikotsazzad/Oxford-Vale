@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { connectDB } from "@/server/db";
-import { ProductModel, UserModel } from "@/models";
+import { UserModel } from "@/models";
 import { getCurrentUser } from "@/server/auth/session";
 import { cleanFields, cleanText } from "@/server/sanitize";
 import { fail, fromZod, ok, type Result } from "@/server/result";
@@ -64,17 +64,4 @@ export async function deleteAddress(id: string): Promise<Result<null>> {
   }
   revalidatePath("/account/addresses");
   return ok(null);
-}
-
-export async function toggleWishlist(productId: string): Promise<Result<{ ids: string[]; added: boolean }>> {
-  if (!objectIdSchema.safeParse(productId).success) return fail("VALIDATION", "Invalid product.");
-  const user = await requireUser();
-  if (!user) return loginRequired();
-  if (!(await ProductModel.exists({ _id: productId, status: "active" }))) return fail("NOT_FOUND", "Product not found.");
-  const doc = await UserModel.findById(user.id).select("wishlist").lean();
-  const has = doc?.wishlist.some((w) => String(w) === productId);
-  await UserModel.updateOne({ _id: user.id }, has ? { $pull: { wishlist: productId } } : { $addToSet: { wishlist: productId } });
-  const after = await UserModel.findById(user.id).select("wishlist").lean();
-  revalidatePath("/account/wishlist");
-  return ok({ ids: (after?.wishlist ?? []).map(String), added: !has });
 }

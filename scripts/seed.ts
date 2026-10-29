@@ -15,7 +15,9 @@ import type { Role } from "@/models/shared";
 import { hashPassword } from "@/server/auth/password";
 import { syncProductSummary } from "@/server/services/catalog-sync";
 import { site } from "@/data/site";
-import { DHAKA_CITY_AREAS } from "@/lib/bd-geo";
+import { usdPrices } from "./seed/usd";
+import { COUPONS, DELIVERY_OPTIONS } from "./seed/uk";
+import { formatMoney } from "@/lib/money";
 import { slugify } from "@/lib/slug";
 import { expandSizes, sizeTypeFor } from "@/lib/size-ranges";
 import { colourHex } from "@/lib/colours";
@@ -50,7 +52,7 @@ const COLLECTIONS: Record<string, { name: string; description: string }> = {
   "New Season": { name: "New Season", description: "New arrivals for the season ahead." },
   Heritage: { name: "Heritage", description: "Traditional English dress, reworked for today." },
   Winter: { name: "Winter Edit", description: "Warm layers for the colder months." },
-  Summer: { name: "Summer Edit", description: "Light fabrics for warm Bangladeshi days." },
+  Summer: { name: "Summer Edit", description: "Light fabrics for warm summer days." },
   Limited: { name: "Limited Edition", description: "Made in small runs. Once they are gone, they are gone." },
 };
 
@@ -76,7 +78,7 @@ async function seedSettings() {
         storeName: site.name,
         tagline: site.tagline,
         legal: site.legal,
-        contact: { phone: site.phoneDisplay, whatsapp: site.whatsappDisplay, email: site.email, supportEmail: site.supportEmail, ordersEmail: site.ordersEmail },
+        contact: { phone: site.phoneDisplay, freephone: site.freephoneDisplay, email: site.email, supportEmail: site.supportEmail, ordersEmail: site.ordersEmail },
         address: site.address,
         hours: site.hoursText,
         socials: site.socials,
@@ -86,12 +88,7 @@ async function seedSettings() {
         freeDeliveryThreshold: site.freeDeliveryThreshold,
         abandonedAfterMinutes: site.abandonedAfterMinutes,
         lowStockThreshold: site.lowStockThreshold,
-        payments: {
-          cod: true,
-          sslcommerz: true,
-          bkash: { enabled: true, number: site.payments.bkashNumber },
-          nagad: { enabled: true, number: site.payments.nagadNumber },
-        },
+        payments: { stripe: true, paypal: true },
         bank: site.bank,
         invoiceFooter: site.invoiceFooter,
       },
@@ -125,28 +122,20 @@ async function seedUsers() {
 }
 
 async function seedZones() {
-  const zones = [
-    { name: "Dhaka City", fee: 80, etaMinDays: 1, etaMaxDays: 2, match: { divisions: [], districts: [], areas: DHAKA_CITY_AREAS }, sortOrder: 1 },
-    { name: "Dhaka (outside city)", fee: 120, etaMinDays: 2, etaMaxDays: 3, match: { divisions: [], districts: ["Dhaka", "Gazipur", "Narayanganj"], areas: [] }, sortOrder: 2 },
-    { name: "Chattogram", fee: 130, etaMinDays: 2, etaMaxDays: 4, match: { divisions: [], districts: ["Chattogram"], areas: [] }, sortOrder: 3 },
-    { name: "Rest of Bangladesh", fee: 150, etaMinDays: 3, etaMaxDays: 5, match: { divisions: [], districts: [], areas: [] }, sortOrder: 4 },
-  ];
-  for (const z of zones) await DeliveryZoneModel.updateOne({ name: z.name }, { $setOnInsert: z }, { upsert: true });
-  log(`Delivery zones: ${zones.map((z) => `${z.name} ৳${z.fee}`).join(" · ")}`);
+  for (const z of DELIVERY_OPTIONS) await DeliveryZoneModel.updateOne({ name: z.name }, { $setOnInsert: z }, { upsert: true });
+  log(`Delivery options: ${DELIVERY_OPTIONS.map((z) => `${z.name} ${formatMoney(z.fee)}`).join(" · ")}`);
 }
 
 async function seedCoupons() {
-  const expiresAt = new Date("2027-12-31T23:59:59+06:00");
-  const coupons = [
-    { code: "WELCOME10", description: "10% off your first order over ৳3,000", type: "percent", value: 10, minOrder: 3000, expiresAt, usageLimit: 0, perCustomerLimit: 1 },
-    { code: "FLAT500", description: "৳500 off orders over ৳5,000", type: "fixed", value: 500, minOrder: 5000, expiresAt, usageLimit: 200, perCustomerLimit: 0 },
-  ];
-  for (const c of coupons) await CouponModel.updateOne({ code: c.code }, { $setOnInsert: c }, { upsert: true });
-  log(`Coupons: ${coupons.map((c) => c.code).join(", ")}`);
+  for (const c of COUPONS) await CouponModel.updateOne({ code: c.code }, { $setOnInsert: c }, { upsert: true });
+  log(`Coupons: ${COUPONS.map((c) => c.code).join(", ")}`);
 }
 
+
 async function seedCatalog() {
-  const rows = readProductsCsv(path.join(ROOT, "data/seed/products.csv")).slice(0, LIMIT);
+  const allRows = readProductsCsv(path.join(ROOT, "data/seed/products.csv"));
+  const usd = usdPrices(allRows); // ranges use the whole sheet, even with --limit
+  const rows = allRows.slice(0, LIMIT).map((r) => ({ ...r, ...usd.get(r.sku)! }));
 
   if (flag("fresh")) {
     await Promise.all([ProductModel.deleteMany({}), VariantModel.deleteMany({}), CategoryModel.deleteMany({}), CollectionModel.deleteMany({})]);
@@ -164,7 +153,7 @@ async function seedCatalog() {
           description: CATEGORY_COPY[name] ?? "",
           image: `/brand/cat-${slug}.jpg`,
           seoTitle: `${name} for Men`,
-          seoDescription: `Shop men's ${name.toLowerCase()} at Oxford Vale. ${CATEGORY_COPY[name] ?? ""} Cash on delivery across Bangladesh.`.trim(),
+          seoDescription: `Shop men's ${name.toLowerCase()} at Oxford Vale. ${CATEGORY_COPY[name] ?? ""} Free UK delivery over $125.`.trim(),
         },
       },
       { upsert: true, returnDocument: "after" },
@@ -216,7 +205,7 @@ async function seedCatalog() {
           careNotes,
           status: "active",
           seoTitle: r.name,
-          seoDescription: `${r.name} in ${r.fabric.toLowerCase()}. Buy online at Oxford Vale with cash on delivery across Bangladesh.`,
+          seoDescription: `${r.name} in ${r.fabric.toLowerCase()}. Buy online at Oxford Vale, with free UK returns and worldwide delivery.`,
         },
       },
       { upsert: true, returnDocument: "after" },

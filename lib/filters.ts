@@ -10,14 +10,20 @@ const int = (v: string | string[] | undefined) => {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined;
 };
 
+const dollars = (v: string | string[] | undefined) => {
+  const n = int(v);
+  return n === undefined ? undefined : n * 100;
+};
+
 /** URL search params → listing query (filters are sanitised; unknown values are ignored). */
 export function parseListingParams(sp: SearchParams): Pick<ProductQuery, "sizes" | "colours" | "min" | "max" | "sort" | "page"> {
   const sort = first(sp.sort);
   return {
     sizes: list(sp.size),
     colours: list(sp.colour),
-    min: int(sp.min),
-    max: int(sp.max),
+    // The URL has whole dollars (?min=100); prices are stored in cents.
+    min: dollars(sp.min),
+    max: dollars(sp.max),
     sort: SORT_KEYS.includes(sort as SortKey) ? (sort as SortKey) : "featured",
     page: int(sp.page) || 1,
   };

@@ -13,7 +13,8 @@
     "seed": "tsx scripts/seed.ts",
     "images": "tsx scripts/fetch-product-images.ts",
     "jobs:abandoned": "tsx scripts/jobs-abandoned.ts",
-    "brand-assets": "tsx scripts/brand-assets.ts"
+    "brand-assets": "tsx scripts/brand-assets.ts",
+    "migrate:uk": "tsx scripts/migrate-uk.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",

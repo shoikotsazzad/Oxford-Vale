@@ -1,5 +1,5 @@
 // Pure price calculation. No database, no I/O: everything is passed in, so it is easy to test.
-// All amounts are whole taka integers. The client never sends prices; callers load them from the DB.
+// All amounts are whole cents (USD). The client never sends prices; callers load them from the DB.
 
 export type PriceSource = { price: number; salePrice?: number | null };
 export type VariantPriceSource = { priceOverride?: number | null };
@@ -11,7 +11,7 @@ export function unitPriceOf(product: PriceSource, variant: VariantPriceSource = 
 
 export type CouponRule = { type: "percent" | "fixed"; value: number; maxDiscount?: number | null };
 
-/** Discount for a subtotal: percent is rounded down to whole taka and capped; fixed never exceeds the subtotal. */
+/** Discount for a subtotal: percent is rounded down to whole cents and capped; fixed never exceeds the subtotal. */
 export function couponDiscount(coupon: CouponRule | null | undefined, subtotal: number): number {
   if (!coupon || subtotal <= 0) return 0;
   let d = coupon.type === "percent" ? Math.floor((subtotal * Math.min(coupon.value, 100)) / 100) : Math.floor(coupon.value);

@@ -1,18 +1,19 @@
-// Long-form copy for static pages. Business facts come from notes/client.md and notes/brief.md only.
+// Long-form copy for static pages (UK English). Business facts come from notes/client.md and the brief only.
 // Contact details, delivery fees and the free-delivery amount are filled in live from admin settings.
+// Policy pages are drafts written from the brand's stated terms: confirm with the business before launch (notes/missing.md).
 
 export type Section = { heading: string; body: string[] };
 
 export const about = {
   title: "About Oxford Vale",
-  description: "Oxford Vale is an English heritage menswear brand in Dhaka, bringing tailored suits, tweed, overcoats and leather shoes to men across Bangladesh.",
+  description: "Oxford Vale is an English heritage menswear brand from Savile Row, London: tailored suits, tweed, overcoats and leather shoes for a modern generation.",
   intro: "English heritage for a modern generation.",
   sections: [
     {
       heading: "Our idea",
       body: [
-        "Oxford Vale started from a simple idea: the classic English wardrobe should be easy to wear in Bangladesh. Tweed caps, herringbone overcoats, sharp three-piece suits and well-made leather shoes have outlasted every trend, and they still look right today.",
-        "We take those classics and adapt them for Dhaka life: lighter linens and cottons for the long summer, wool and tweed for winter evenings and weddings, and fits that work in the office and outside it.",
+        "Oxford Vale started from a simple idea: the classic English wardrobe should be easy to wear today. Tweed caps, herringbone overcoats, sharp three-piece suits and well-made leather shoes have outlasted every trend, and they still look right.",
+        "We take those classics and cut them for modern life: lighter cottons and linens for summer, wool and tweed for the colder months, and fits that work in the office and outside it.",
       ],
     },
     {
@@ -24,8 +25,8 @@ export const about = {
     {
       heading: "How we sell",
       body: [
-        "Shop online with cash on delivery, bKash, Nagad or card, and get delivery anywhere in Bangladesh. If something doesn't fit, you can exchange or return it within 14 days of delivery.",
-        "Prefer to see it in person? Visit our showroom in Gulshan 1, Dhaka.",
+        "Shop online and pay by card, Apple Pay, Google Pay, PayPal or Klarna. We deliver across the UK, Europe and worldwide, and UK returns are free within 30 days.",
+        "Prefer to see it in person? Visit our showroom at 14 Savile Row, Mayfair.",
       ],
     },
   ] satisfies Section[],
@@ -33,15 +34,15 @@ export const about = {
 
 export const contact = {
   title: "Contact Us",
-  description: "Call, WhatsApp or message Oxford Vale. Showroom in Gulshan 1, Dhaka. We reply within one working day.",
-  intro: "Questions about sizing, an order or a delivery? Send us a message, call or WhatsApp. We reply within one working day.",
+  description: "Call, email or message Oxford Vale. Showroom at 14 Savile Row, London. We reply within one working day.",
+  intro: "Questions about sizing, an order or a delivery? Send us a message, call or email. We reply within one working day.",
 };
 
 /** General guide (standard UK/EU sizing). Replace with the brand's own measurements when available (notes/missing.md). */
 export const sizeGuide = {
   title: "Size Guide",
   description: "How to measure and find your size for Oxford Vale suits, shirts, trousers, shoes and caps.",
-  intro: "Measurements are body measurements in inches unless stated. If you are between sizes, choose the larger size for tailoring and outerwear. Not sure? Message us on WhatsApp with your measurements and we will help.",
+  intro: "Measurements are body measurements in inches unless stated. If you are between sizes, choose the larger size for tailoring and outerwear. Not sure? Call or email our Savile Row team with your measurements and we'll help.",
   howTo: [
     { label: "Chest", text: "Measure around the fullest part of your chest, under the arms, keeping the tape level." },
     { label: "Waist", text: "Measure around your natural waistline, where you normally wear your trousers." },
@@ -79,58 +80,64 @@ export const sizeGuide = {
 };
 
 export const shippingPolicy = {
-  title: "Shipping Policy",
-  description: "Delivery fees, delivery times and free delivery for Oxford Vale orders across Bangladesh.",
+  title: "Delivery & Shipping",
+  description: "Delivery options, fees and times for Oxford Vale orders in the UK, Europe and worldwide.",
   sections: [
     {
       heading: "Where we deliver",
-      body: ["We deliver to every district in Bangladesh. Orders are dispatched from our Gulshan 1, Dhaka showroom."],
+      body: ["We deliver across the United Kingdom, to Europe and to most countries worldwide. Orders are dispatched from 14 Savile Row, London W1S 3PR."],
     },
     {
       heading: "Processing time",
       body: [
-        "Orders placed before 5 PM are usually processed the same day. Orders placed later, or on Fridays and public holidays, are processed the next working day.",
-        "Orders paid by bKash or Nagad are processed after we verify the payment.",
+        "Orders are processed Monday to Friday, except UK bank holidays. Next-day orders placed before 2 pm on a working day are dispatched the same day.",
+        "Every order is paid online at checkout; we start preparing it as soon as the payment is confirmed.",
+      ],
+    },
+    {
+      heading: "International orders",
+      body: [
+        "Delivery rates for Europe and the rest of the world are shown at checkout. Orders delivered outside the UK may be charged import duties and local taxes by the destination country; these are paid by the recipient.",
       ],
     },
     {
       heading: "Tracking your order",
-      body: ["You will receive an order confirmation by email and SMS. You can check the status any time on the Track Order page with your order number and phone number."],
-    },
-    {
-      heading: "Cash on delivery",
-      body: ["Cash on delivery is available everywhere we deliver. Please have the exact amount ready and check the parcel in front of the delivery person."],
+      body: ["You will receive an order confirmation by email, and another email with the courier and tracking number when your order ships. You can check the status any time on the Track Order page with your order number and email or phone number."],
     },
   ] satisfies Section[],
 };
 
 export const returnsPolicy = {
   title: "Returns & Exchanges",
-  description: "Exchange or return Oxford Vale items within 14 days of delivery.",
+  description: "Free UK returns within 30 days of delivery.",
   sections: [
     {
-      heading: "14-day returns",
-      body: ["You can exchange or return an item within 14 days of delivery if it is unworn, unwashed, with all tags attached and in its original packaging."],
+      heading: "30-day returns",
+      body: [
+        "You can return or exchange an item within 30 days of delivery if it is unworn, unwashed, with all tags attached and in its original packaging. Returns are free for UK orders.",
+        "This is in addition to your statutory rights: under the Consumer Contracts Regulations you can cancel an online order within 14 days of delivery.",
+      ],
     },
     {
       heading: "How to start a return",
       body: [
-        "Contact us by phone, WhatsApp or the contact form with your order number and the item you want to exchange or return. We will confirm the next steps and arrange collection or drop-off at the showroom.",
+        "Email support@oxfordvale.example or use the contact form with your order number and the items you want to return or exchange. We will send you a free UK returns label, or you can return items to our Savile Row showroom.",
+        "International customers can return items at their own cost; please contact us first so we can recognise your parcel.",
       ],
     },
     {
       heading: "Refunds",
       body: [
-        "Once we receive and check the item, we refund the item price to your original payment method, or by bKash or Nagad for cash on delivery orders. Delivery charges are not refundable unless the item was faulty or we sent the wrong item.",
+        "Once we receive and check the items, we refund the item price to your original payment method (card, PayPal or Klarna) within 14 days. If you return a whole order, we also refund the standard delivery charge.",
       ],
     },
     {
       heading: "Items we can't take back",
-      body: ["For hygiene reasons, worn or altered items, and items without tags, cannot be returned. Sale items can be exchanged for a different size if stock allows."],
+      body: ["Worn, washed or altered items, and items without tags, cannot be returned unless they are faulty. Sale items can be returned within the same 30 days."],
     },
     {
       heading: "Faulty or wrong items",
-      body: ["If your item arrives damaged or is not what you ordered, contact us within 48 hours of delivery with a photo and we will replace it or refund you in full, including delivery."],
+      body: ["If your item arrives damaged, faulty or is not what you ordered, contact us with a photo and we will replace it or refund you in full, including delivery. Your rights under the Consumer Rights Act 2015 are not affected."],
     },
   ] satisfies Section[],
 };
@@ -140,30 +147,34 @@ export const privacy = {
   description: "How Oxford Vale collects, uses and protects your personal information.",
   sections: [
     {
+      heading: "Who we are",
+      body: ["Oxford Vale Menswear Ltd., 14 Savile Row, London W1S 3PR, is the data controller for information collected on this website. Contact us at support@oxfordvale.example with any privacy question."],
+    },
+    {
       heading: "What we collect",
       body: [
-        "When you add items to your cart, check out, create an account or contact us, we collect your name, mobile number, email address and delivery address, and the products in your cart and orders.",
-        "We also store technical information needed to run the shop, such as a cart cookie, a login session cookie and your language preference.",
+        "When you add items to your bag, check out, create an account or contact us, we collect your name, phone number, email address and delivery address, and the products in your bag and orders.",
+        "We also store technical information needed to run the shop, such as a bag cookie, a login session cookie and your light or dark theme choice.",
       ],
     },
     {
       heading: "How we use it",
       body: [
-        "We use your information to process and deliver orders, send order confirmations and delivery updates by email and SMS, respond to your messages, and follow up on carts you have not completed.",
-        "We do not sell your information. We share only what is needed with delivery partners and payment providers (such as SSLCommerz, bKash or Nagad) to complete your order.",
+        "We use your information to process and deliver orders, send order confirmations and delivery updates by email, respond to your messages, and follow up on bags you have not completed. Our lawful bases under UK GDPR are performing our contract with you and our legitimate interest in running the shop.",
+        "We do not sell your information. We share only what is needed with delivery partners and payment providers (Stripe and PayPal) to complete your order.",
       ],
     },
     {
       heading: "Payments",
-      body: ["Card payments are handled by SSLCommerz on their secure page. We never see or store your card details."],
+      body: ["Card, Apple Pay, Google Pay and Klarna payments are handled by Stripe, and PayPal payments by PayPal, on their secure pages. We never see or store your card details."],
     },
     {
       heading: "Cookies",
-      body: ["We use essential cookies for your cart, login and language choice. The shop does not work without them."],
+      body: ["We use only essential cookies for your bag and login, plus a small setting in your browser that remembers light or dark mode. The shop does not work without the essential cookies."],
     },
     {
-      heading: "Your choices",
-      body: ["You can view and update your details in your account, or contact us to correct or delete your information."],
+      heading: "Your rights",
+      body: ["You can view and update your details in your account, or ask us to access, correct or delete your information. If you are unhappy with how we handle your data, you can complain to the Information Commissioner's Office (ico.org.uk)."],
     },
   ] satisfies Section[],
 };
@@ -174,20 +185,20 @@ export const terms = {
   sections: [
     {
       heading: "About these terms",
-      body: ["These terms apply to orders placed on this website. By placing an order you agree to them."],
+      body: ["These terms apply to orders placed on this website with Oxford Vale Menswear Ltd., registered in England and Wales. By placing an order you agree to them."],
     },
     {
       heading: "Prices and availability",
       body: [
-        "All prices are in Bangladeshi Taka (৳) and include applicable VAT. Delivery charges are shown at checkout before you pay.",
+        "Prices are shown in US dollars (USD) and include VAT where it applies. Delivery charges are shown at checkout before you pay.",
         "Stock is reserved when you place an order. If an item becomes unavailable we will contact you and refund any payment for it.",
       ],
     },
     {
       heading: "Orders and payment",
       body: [
-        "An order is confirmed when you receive an order number. We may cancel orders with incorrect pricing, suspected fraud or an unreachable phone number, and will refund any payment in full.",
-        "You can cancel your order yourself while it is still Pending. After that, contact us and we will help if it has not been dispatched.",
+        "Payment is taken at checkout by Stripe or PayPal. Your order is confirmed when the payment is confirmed and you receive a confirmation email. We may cancel orders with incorrect pricing or suspected fraud, and will refund any payment in full.",
+        "You can cancel an unpaid order yourself while it is still Pending. After that, contact us and we will help if it has not been dispatched.",
       ],
     },
     {
@@ -196,11 +207,11 @@ export const terms = {
     },
     {
       heading: "Returns",
-      body: ["Returns and exchanges follow our Returns & Exchanges policy."],
+      body: ["Returns and exchanges follow our Returns & Exchanges policy. Your statutory rights are not affected."],
     },
     {
-      heading: "Contact",
-      body: ["For any questions about these terms, contact us using the details on the Contact page."],
+      heading: "Law",
+      body: ["These terms are governed by the law of England and Wales. For any questions, contact us using the details on the Contact page."],
     },
   ] satisfies Section[],
 };

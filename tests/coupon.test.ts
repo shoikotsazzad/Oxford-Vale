@@ -24,7 +24,7 @@ describe("validateCoupon", () => {
     ["inactive", { isActive: false }, "TEST10", 5000, /isn't valid/],
     ["expired", { expiresAt: new Date(Date.now() - 1000) }, "TEST10", 5000, /expired/],
     ["not started", { startsAt: future }, "TEST10", 5000, /isn't active yet/],
-    ["below minimum", {}, "TEST10", 2999, /at least ৳3,000/],
+    ["below minimum", {}, "TEST10", 2999, /at least \$30/],
     ["usage limit reached", { usageLimit: 5, usedCount: 5 }, "TEST10", 5000, /usage limit/],
   ])("rejects %s", async (_label, over, code, subtotal, message) => {
     await make(over);
@@ -34,14 +34,14 @@ describe("validateCoupon", () => {
   it("enforces the per-customer limit by phone, ignoring cancelled orders", async () => {
     await make({ perCustomerLimit: 1 });
     const base = {
-      couponCode: "TEST10", customer: { name: "A", phone: "01700000009" }, items: [{ product: "6ad999a83bc545b1f88fb120", variant: "6ad999a83bc545b1f88fb121", sku: "X", name: "X", regularPrice: 1, unitPrice: 1, qty: 1, lineTotal: 1 }],
-      shippingAddress: { name: "A", phone: "01700000009", division: "Dhaka", district: "Dhaka", upazila: "Gulshan", addressLine: "House 1" },
-      subtotal: 1, total: 1, paymentMethod: "cod" as const,
+      couponCode: "TEST10", customer: { name: "A", phone: "07700900009" }, items: [{ product: "6ad999a83bc545b1f88fb120", variant: "6ad999a83bc545b1f88fb121", sku: "X", name: "X", regularPrice: 1, unitPrice: 1, qty: 1, lineTotal: 1 }],
+      shippingAddress: { name: "A", phone: "07700900009", line1: "1 Test Street", city: "London", postcode: "W1S 3PR", country: "GB" },
+      subtotal: 1, total: 1, paymentMethod: "stripe" as const,
     };
     await OrderModel.create({ ...base, orderNo: "OV-000000-0001", status: "cancelled" });
-    await expect(validateCoupon("TEST10", { subtotal: 5000, phone: "01700000009" })).resolves.toBeTruthy();
+    await expect(validateCoupon("TEST10", { subtotal: 5000, phone: "07700900009" })).resolves.toBeTruthy();
     await OrderModel.create({ ...base, orderNo: "OV-000000-0002" });
-    await expect(validateCoupon("TEST10", { subtotal: 5000, phone: "01700000009" })).rejects.toBeInstanceOf(CouponError);
+    await expect(validateCoupon("TEST10", { subtotal: 5000, phone: "07700900009" })).rejects.toBeInstanceOf(CouponError);
     await expect(validateCoupon("TEST10", { subtotal: 5000, phone: "01800000009" })).resolves.toBeTruthy();
   });
 });

@@ -89,7 +89,7 @@ export function PurchasePanel({ price, salePrice, variants, sizeLabel, lowStockT
               return (
                 <button key={v.id} type="button" disabled={out} aria-pressed={v.size === size}
                   onClick={() => { setSize(v.size); setQty(1); setError(null); }}
-                  className={`min-h-11 min-w-12 rounded-md border px-3 text-sm transition-colors ${v.size === size ? "border-ink bg-ink text-white" : "border-line bg-white/60 hover:border-ink"} ${out ? "cursor-not-allowed text-muted line-through opacity-50 hover:border-line" : ""}`}>
+                  className={`min-h-11 min-w-12 rounded-md border px-3 text-sm transition-colors ${v.size === size ? "border-ink bg-ink text-paper" : "border-line bg-surface/60 hover:border-ink"} ${out ? "cursor-not-allowed text-muted line-through opacity-50 hover:border-line" : ""}`}>
                   {v.size}
                 </button>
               );
@@ -101,7 +101,7 @@ export function PurchasePanel({ price, salePrice, variants, sizeLabel, lowStockT
       <p className={`mt-5 text-sm ${status.cls}`} aria-live="polite">● {status.text}</p>
 
       <div className="mt-6 flex gap-3">
-        <div className="flex items-center rounded-md border border-line bg-white/60" role="group" aria-label={t.product.quantity}>
+        <div className="flex items-center rounded-md border border-line bg-surface/60" role="group" aria-label={t.product.quantity}>
           <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label={t.product.decrease} className="flex h-12 w-11 items-center justify-center disabled:opacity-30"><MinusIcon size={16} /></button>
           <span className="w-8 text-center text-sm tabular-nums" aria-live="polite">{qty}</span>
           <button type="button" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty || stock <= 0} aria-label={t.product.increase} className="flex h-12 w-11 items-center justify-center disabled:opacity-30"><PlusIcon size={16} /></button>

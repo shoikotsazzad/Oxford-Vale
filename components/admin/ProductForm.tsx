@@ -22,7 +22,7 @@ type Option = { id: string; name: string };
 
 let seq = 0;
 const newKey = () => `new-${++seq}`;
-const input = "h-10 rounded-md border border-line bg-white px-2 text-sm outline-none focus:border-ink disabled:bg-paper";
+const input = "h-10 rounded-md border border-line bg-surface px-2 text-sm outline-none focus:border-ink disabled:bg-paper";
 const cell = `${input} w-full`;
 
 export function ProductForm({ id, initial, categories, collections, readOnly }: { id?: string; initial: ProductFormValue; categories: Option[]; collections: Option[]; readOnly: boolean }) {
@@ -99,7 +99,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
   return (
     <form onSubmit={submit} noValidate className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
       <div className="min-w-0 space-y-6">
-        <section className="space-y-4 rounded-lg border border-line bg-white p-5">
+        <section className="space-y-4 rounded-lg border border-line bg-surface p-5">
           <TextField label="Name" {...text("name")} required />
           <TextArea label="Description" rows={6} {...text("description")} />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -109,7 +109,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
           <TextArea label="Care notes" rows={3} {...text("careNotes")} />
         </section>
 
-        <section className="rounded-lg border border-line bg-white p-5">
+        <section className="rounded-lg border border-line bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-semibold">Photos</h2>
             <p className="text-xs text-muted">First photo is the main image, second shows on hover. Uploads are cropped to 4:5.</p>
@@ -119,7 +119,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
               <li key={img.url} className="rounded-md border border-line p-2">
                 <div className="relative aspect-[4/5] overflow-hidden rounded bg-sand">
                   <Image src={img.url} alt={img.alt} fill sizes="160px" className="object-cover" unoptimized={isPlaceholder(img.url)} />
-                  {i === 0 && <span className="label absolute top-1 left-1 rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">Main</span>}
+                  {i === 0 && <span className="label absolute top-1 left-1 rounded bg-ink px-1.5 py-0.5 text-[10px] text-paper">Main</span>}
                 </div>
                 <input
                   aria-label={`Alt text for photo ${i + 1}`}
@@ -152,7 +152,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
           {fields.images && <p className="mt-3 text-sm text-danger">{fields.images}</p>}
         </section>
 
-        <section className="rounded-lg border border-line bg-white p-5">
+        <section className="rounded-lg border border-line bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-semibold">Sizes, colours &amp; stock</h2>
             <p className="text-xs text-muted">{v.variants.length} variant{v.variants.length === 1 ? "" : "s"} · {totalStock} in stock. SKUs fill in automatically when left empty.</p>
@@ -177,7 +177,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
                     <td className="py-1 pr-2"><input aria-label="Colour" value={row.colour} disabled={readOnly} onChange={(e) => setVariant(i, { colour: e.target.value })} className={cell} /></td>
                     <td className="py-1 pr-2"><input aria-label="SKU" value={row.sku} disabled={readOnly} onChange={(e) => setVariant(i, { sku: e.target.value.toUpperCase() })} placeholder="auto" className={`${cell} font-mono text-xs`} /></td>
                     <td className="py-1 pr-2"><input aria-label="Stock" type="number" min={0} inputMode="numeric" value={row.stock} disabled={readOnly} onChange={(e) => setVariant(i, { stock: e.target.value })} className={`${cell} tabular-nums ${Number(row.stock) === 0 ? "text-danger" : ""}`} /></td>
-                    <td className="py-1 pr-2"><input aria-label="Price override (taka)" type="number" min={0} inputMode="numeric" value={row.priceOverride} disabled={readOnly} onChange={(e) => setVariant(i, { priceOverride: e.target.value })} placeholder="—" className={`${cell} tabular-nums`} /></td>
+                    <td className="py-1 pr-2"><input aria-label="Price override ($)" type="number" min={0} step="0.01" inputMode="decimal" value={row.priceOverride} disabled={readOnly} onChange={(e) => setVariant(i, { priceOverride: e.target.value })} placeholder="—" className={`${cell} tabular-nums`} /></td>
                     <td className="py-1 text-center"><input aria-label="Available" type="checkbox" checked={row.isActive} disabled={readOnly} onChange={(e) => setVariant(i, { isActive: e.target.checked })} className="mt-2.5 h-5 w-5 accent-ink" /></td>
                     <td className="py-1">
                       {!readOnly && (
@@ -207,15 +207,15 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
       </div>
 
       <div className="min-w-0 space-y-6">
-        <section className="space-y-4 rounded-lg border border-line bg-white p-5 xl:sticky xl:top-6">
+        <section className="space-y-4 rounded-lg border border-line bg-surface p-5 xl:sticky xl:top-6">
           <SelectField label="Status" name="status" value={v.status} disabled={readOnly} onChange={(e) => set("status", e.target.value as ProductFormValue["status"])} hint="Only active products appear in the store.">
             <option value="active">Active</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </SelectField>
           <div className="grid grid-cols-2 gap-4">
-            <TextField label="Price (৳)" type="number" min={0} inputMode="numeric" {...text("price")} />
-            <TextField label="Sale price (৳)" type="number" min={0} inputMode="numeric" {...text("salePrice")} hint="Leave empty if not on sale" />
+            <TextField label="Price ($)" type="number" min={0} step="0.01" inputMode="decimal" {...text("price")} />
+            <TextField label="Sale price ($)" type="number" min={0} step="0.01" inputMode="decimal" {...text("salePrice")} hint="Leave empty if not on sale" />
           </div>
           <SelectField label="Category" name="category" value={v.category} disabled={readOnly} error={fields.category} onChange={(e) => set("category", e.target.value)}>
             <option value="">Choose…</option>
@@ -227,7 +227,7 @@ export function ProductForm({ id, initial, categories, collections, readOnly }: 
               {collections.map((c) => {
                 const on = v.collections.includes(c.id);
                 return (
-                  <label key={c.id} className={`flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm ${on ? "border-ink bg-ink text-white" : "border-line hover:border-ink"} ${readOnly ? "pointer-events-none" : ""}`}>
+                  <label key={c.id} className={`flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm ${on ? "border-ink bg-ink text-paper" : "border-line hover:border-ink"} ${readOnly ? "pointer-events-none" : ""}`}>
                     <input type="checkbox" className="sr-only" checked={on} disabled={readOnly} onChange={() => set("collections", on ? v.collections.filter((x) => x !== c.id) : [...v.collections, c.id])} />
                     {c.name}
                   </label>

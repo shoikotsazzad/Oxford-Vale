@@ -8,14 +8,13 @@ export async function getUserOrders(userId: string, limit = 50): Promise<OrderRo
 }
 
 export async function getUserProfile(userId: string) {
-  const u = await UserModel.findById(userId).select("name email phone addresses wishlist").lean();
+  const u = await UserModel.findById(userId).select("name email phone addresses").lean();
   if (!u) return null;
   return {
     name: u.name, email: u.email, phone: u.phone ?? "",
     addresses: u.addresses.map((a) => ({
       id: String(a._id), label: a.label ?? "Home", isDefault: Boolean(a.isDefault), name: a.name, phone: a.phone,
-      division: a.division, district: a.district, upazila: a.upazila, addressLine: a.addressLine,
+      line1: a.line1, line2: a.line2 ?? "", city: a.city, county: a.county ?? "", postcode: a.postcode ?? "", country: a.country,
     })),
-    wishlist: u.wishlist.map(String),
   };
 }

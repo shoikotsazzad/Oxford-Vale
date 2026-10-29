@@ -6,7 +6,7 @@ function cell(value: unknown): string {
 }
 
 export function toCsv(headers: string[], rows: unknown[][]): string {
-  return "﻿" + [headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n"); // BOM so Excel reads UTF-8 (৳, Bangla)
+  return "﻿" + [headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n"); // BOM so Excel reads UTF-8 (£, accents)
 }
 
 export function csvResponse(filename: string, body: string) {

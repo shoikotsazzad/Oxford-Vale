@@ -28,7 +28,7 @@ export function Pagination({ page, pages, pathname, searchParams, t }: { page: n
         n === "…" ? (
           <span key={`e${i}`} className={`${cell} text-muted`}>…</span>
         ) : (
-          <Link key={n} href={href(n)} aria-current={n === page ? "page" : undefined} className={`${cell} ${n === page ? "bg-ink text-white" : "hover:bg-sand"}`}>{n}</Link>
+          <Link key={n} href={href(n)} aria-current={n === page ? "page" : undefined} className={`${cell} ${n === page ? "bg-ink text-paper" : "hover:bg-sand"}`}>{n}</Link>
         ),
       )}
       {page < pages ? <Link href={href(page + 1)} className={`${cell} hover:bg-sand`} aria-label={t.listing.next}><ChevronRightIcon size={18} /></Link> : <span className={`${cell} opacity-30`}><ChevronRightIcon size={18} /></span>}

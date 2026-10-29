@@ -1,7 +1,9 @@
 // Notification events. Each one loads what it needs, sends through notify.ts (logged + de-duplicated) and never throws,
 // so callers can run them in after() without risking the shopper's request. No Next.js APIs: scripts can use them too.
 import { ContactMessageModel, LeadModel, NotificationLogModel, OrderModel, SettingModel, type Lead, type Order } from "@/models";
-import { sendEmail, sendSms } from "@/server/services/notify";
+import { sendEmail } from "@/server/services/notify";
+import { addressLines } from "@/lib/address";
+import { formatPhone } from "@/lib/phone";
 import { orderUrl } from "@/server/services/payment-redirect";
 import { site } from "@/data/site";
 import * as T from "./templates";
@@ -9,15 +11,14 @@ import * as T from "./templates";
 const baseUrl = () => (process.env.APP_URL || site.url).replace(/\/$/, "");
 
 async function storeInfo(): Promise<T.Store & { ordersEmail: string }> {
-  const s = await SettingModel.findOne({ key: "store" }).select("storeName contact payments").lean();
+  const s = await SettingModel.findOne({ key: "store" }).select("storeName contact legal").lean();
+  const legal = { ...site.legal, ...Object.fromEntries(Object.entries(s?.legal ?? {}).filter(([, v]) => v)) };
   return {
     name: s?.storeName || site.name,
     phone: s?.contact?.phone || site.phoneDisplay,
-    whatsapp: s?.contact?.whatsapp || site.whatsappDisplay,
     email: s?.contact?.email || site.email,
     ordersEmail: s?.contact?.ordersEmail || site.ordersEmail,
-    bkash: s?.payments?.bkash?.number || site.payments.bkashNumber,
-    nagad: s?.payments?.nagad?.number || site.payments.nagadNumber,
+    legal: `${legal.name} · Registered in England and Wales, company no. ${legal.companyNo} · VAT no. ${legal.vatNo}`,
     url: baseUrl(),
   };
 }
@@ -25,11 +26,12 @@ async function storeInfo(): Promise<T.Store & { ordersEmail: string }> {
 function orderInfo(o: Order): T.OrderInfo {
   const a = o.shippingAddress!;
   return {
-    orderNo: o.orderNo, customerName: o.customer!.name, phone: o.customer!.phone, email: o.customer!.email ?? "",
+    orderNo: o.orderNo, customerName: o.customer!.name, phone: formatPhone(o.customer!.phone), email: o.customer!.email ?? "",
     items: o.items.map((i) => ({ name: i.name, size: i.size, colour: i.colour, qty: i.qty, lineTotal: i.lineTotal })),
     subtotal: o.subtotal, discount: o.discount ?? 0, couponCode: o.couponCode, deliveryName: o.delivery?.name ?? "", deliveryFee: o.delivery?.fee ?? 0, total: o.total,
     paymentMethod: o.paymentMethod, paymentStatus: o.paymentStatus, etaMin: o.delivery?.etaMinDays ?? 0, etaMax: o.delivery?.etaMaxDays ?? 0,
-    address: `${a.addressLine}, ${a.upazila}, ${a.district}`, note: o.note,
+    address: addressLines({ line1: a.line1, line2: a.line2 ?? "", city: a.city, county: a.county ?? "", postcode: a.postcode ?? "", country: a.country }).join(", "),
+    note: o.note,
     link: `${baseUrl()}${orderUrl(o.orderNo)}`, adminLink: `${baseUrl()}/admin/orders/${o.orderNo}`,
     courier: o.shipment?.courier ?? undefined, trackingNo: o.shipment?.trackingNo ?? undefined,
   };
@@ -44,7 +46,7 @@ async function safely(label: string, fn: () => Promise<unknown>) {
   }
 }
 
-/** Order placed: customer email + SMS, admin email. */
+/** Order placed: customer email, admin email. */
 export function notifyOrderPlaced(orderNo: string) {
   return safely(`order.placed ${orderNo}`, async () => {
     const o = await OrderModel.findOne({ orderNo }).lean();
@@ -54,13 +56,12 @@ export function notifyOrderPlaced(orderNo: string) {
     const email = T.orderPlacedEmail(info, store);
     await Promise.all([
       info.email && sendEmail({ to: info.email, ...email, replyTo: store.email }, ref, "order.placed"),
-      sendSms({ to: info.phone, text: T.orderPlacedSms(info, store) }, ref, "order.placed"),
       store.ordersEmail && sendEmail({ to: store.ordersEmail, ...T.adminNewOrderEmail(info, store), replyTo: info.email || undefined }, ref, "order.placed.admin"),
     ]);
   });
 }
 
-/** Online payment confirmed or bKash/Nagad verified: customer email. */
+/** Online payment confirmed after the order email went out: customer receipt. */
 export function notifyPaymentReceived(orderNo: string) {
   return safely(`order.paid ${orderNo}`, async () => {
     const o = await OrderModel.findOne({ orderNo }).lean();
@@ -70,7 +71,7 @@ export function notifyPaymentReceived(orderNo: string) {
   });
 }
 
-/** SSLCommerz paid: the "order received" message (showing paid) if it wasn't sent yet, otherwise a payment receipt. */
+/** Paid online: the "order received" email (showing paid) if it wasn't sent yet, otherwise a payment receipt. */
 export function notifyOnlinePaid(orderNo: string) {
   return safely(`online paid ${orderNo}`, async () => {
     const placed = await NotificationLogModel.exists({ event: "order.placed", "ref.id": orderNo, status: { $in: ["sent", "logged"] } });
@@ -78,17 +79,14 @@ export function notifyOnlinePaid(orderNo: string) {
   });
 }
 
-/** Shipped: customer SMS (plan §4) + email with courier and tracking number. */
+/** Shipped: customer email with courier and tracking number. */
 export function notifyOrderShipped(orderNo: string) {
   return safely(`order.shipped ${orderNo}`, async () => {
     const o = await OrderModel.findOne({ orderNo }).lean();
     if (!o || o.status !== "shipped") return;
     const [store, info] = [await storeInfo(), orderInfo(o)];
     const ref = { type: "order", id: orderNo };
-    await Promise.all([
-      sendSms({ to: info.phone, text: T.orderShippedSms(info, store) }, ref, "order.shipped"),
-      info.email && sendEmail({ to: info.email, ...T.orderShippedEmail(info, store), replyTo: store.email }, ref, "order.shipped"),
-    ]);
+    if (info.email) await sendEmail({ to: info.email, ...T.orderShippedEmail(info, store), replyTo: store.email }, ref, "order.shipped");
   });
 }
 
@@ -133,9 +131,7 @@ export async function notifyAbandonedCarts(minutes: number, now = new Date()) {
 }
 
 /** Admin → Settings "send test": returns the provider result so the owner can see what happened. */
-export async function sendTest(channel: "email" | "sms", to: string) {
+export async function sendTest(to: string) {
   const store = await storeInfo();
-  return channel === "email"
-    ? sendEmail({ to, ...T.testEmail(store) }, { type: "test", id: to })
-    : sendSms({ to, text: `${store.name}: test SMS from the admin. SMS sending works.` }, { type: "test", id: to });
+  return sendEmail({ to, ...T.testEmail(store) }, { type: "test", id: to });
 }

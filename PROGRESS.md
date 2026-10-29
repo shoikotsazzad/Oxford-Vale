@@ -162,7 +162,40 @@ Build order (notes/plan.md §8): 1 setup + seed → 2 storefront browsing → 3 
 ### Mocked / pending
 - Home photos are stand-ins (see notes/missing.md → Brand photos)
 
+## Change request — UK store, USD, light/dark mode (2026-10-28)
+
+### Done
+- Bag error fixed: adding to the bag while signed in to an account without a phone (e.g. the Owner) failed on the lead; leads now need a phone and never block the bag
+- New-season photo (`new-season2.jpg`, kept top-aligned so the head stays in frame) and "Shop the look" photo (`The waistcoat.jpeg`) with matching products
+- English only: Bangla toggle, dictionary and font removed
+- Light/dark mode: header toggle (desktop + mobile menu), admin sidebar and admin login; follows the system until chosen, remembered in the browser, no flash on load. Dark palette is the same tokens redefined, every text pair checked for WCAG AA
+- UK business details (placeholders from the developer): Savile Row address, 020 7946 / 0800 numbers, company and VAT numbers, UK hours, X added to socials, legal line in the footer, emails and invoices
+- Currency: US dollars stored as integer cents; per-category price ladder (`scripts/seed/usd.ts`), sale discounts kept; admin money fields typed in dollars
+- UK addresses (line 1/2, town, county, postcode validated + formatted, 232 countries) and phone numbers (UK mobile/landline or +country)
+- Delivery options per country picked at checkout: UK Standard (free over $125), UK Next day ($8.95), Europe, Rest of the world; admin page rebuilt
+- Payments: Stripe Checkout (cards, Amex, Apple Pay, Google Pay, Klarna) and PayPal over REST, mock pages until keys; server-side confirmation, amount + currency check, paid exactly once (return + webhook), signed Stripe webhook; pay page to retry or switch provider. COD, bKash, Nagad, SSLCommerz removed
+- Email-only notifications (SMS removed); UK time (Europe/London) for order numbers, dashboard and dates; WhatsApp buttons replaced with call / email
+- Page copy rewritten for the UK (about, contact, delivery, 30-day returns, UK GDPR privacy, terms under English law)
+- Database converted in place with `npm run migrate:uk` (backup in `storage/backups/`): 150 products repriced, 49 orders + 61 leads converted (demo customers moved to UK addresses), coupons WELCOME10 / SAVE25, settings
+- Checks: 95 tests, lint, type-check, production build compiles (stopped only by the Next.js security notice), end-to-end browser run: dollars everywhere, dark mode across pages, UK checkout with next-day delivery, Stripe mock paid, PayPal cancel then retry, invalid postcode rejected, US gets only rest-of-world, tracking by email, admin in dollars. No page errors
+
+### Mocked / pending
+- Stripe and PayPal run in mock mode until keys are added; three delivery fees are placeholders (notes/missing.md)
+- Next.js 16.4.0 has critical advisories; upgrade to 16.4.3
+
 ## Open items
 - [x] Step 5: admin panel
 - [x] Step 6: notifications
 - [x] Step 7: polish
+
+## Change request 2026-10-29: app-style phones and tablets
+- Below 1024px: fixed bottom tab bar (`components/store/MobileTabBar.tsx`): Home, Shop, Bag (opens the drawer, shows count), Wishlist, Account. Safe-area aware; hidden on checkout.
+- Home on phones/tablets: greeting + search pill (`MobileWelcome`), rounded hero card, category tiles with "View all", compact section headings, offer card (`OfferCard`, coupon from `data/home.ts` → shown only while active in admin), "On sale" as list rows, "Best of" trimmed to 4 (phone) / 6 (tablet).
+- Desktop (1024px+) unchanged.
+
+## Change request 2026-10-29 (2): mobile polish, wishlist removed
+- Phones/tablets: header shows only the wordmark and light/dark toggle; tab bar is Home, Shop, Search, Bag, Account.
+- Smaller new-season banner, collections as a swipe row, shorter shop-the-look photo on small screens.
+- Footer below lg: centred, essentials only (phone/email, key links, payment badges, socials, legal line). Desktop footer unchanged.
+- Wishlist removed everywhere (product cards, header, tab bar, account page and nav, provider, server action, User.wishlist field). Existing wishlist data in MongoDB is simply ignored.
+- Account pages: loading.tsx per segment fixes Next 16 "uncached data … outside <Suspense>" navigation errors.

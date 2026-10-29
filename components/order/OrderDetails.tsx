@@ -1,12 +1,14 @@
 import Image from "next/image";
 import type { Dict } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { imageSrc, isPlaceholder } from "@/lib/images";
+import { addressLines } from "@/lib/address";
+import { formatPhone } from "@/lib/phone";
 import type { OrderViewDTO } from "@/server/services/order-view";
 
 const STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"] as const;
-const dt = (iso: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Dhaka" }).format(new Date(iso));
+const dt = (iso: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/London" }).format(new Date(iso));
 
 export function StatusBadge({ text, tone }: { text: string; tone: "ok" | "warn" | "bad" | "neutral" }) {
   const cls = { ok: "bg-success/10 text-success", warn: "bg-sale/10 text-sale", bad: "bg-danger/10 text-danger", neutral: "bg-sand text-ink" }[tone];
@@ -16,13 +18,13 @@ export function StatusBadge({ text, tone }: { text: string; tone: "ok" | "warn" 
 export function OrderDetails({ order, t, actions }: { order: OrderViewDTO; t: Dict; actions?: React.ReactNode }) {
   const step = STEPS.indexOf(order.status as (typeof STEPS)[number]);
   const off = step < 0; // cancelled / returned / refunded
-  const payTone = order.paymentStatus === "paid" ? "ok" : order.paymentStatus === "failed" ? "bad" : order.awaitingVerification ? "warn" : "neutral";
-  const payText = order.awaitingVerification ? t.order.awaiting : t.order.paymentStatuses[order.paymentStatus];
+  const payTone = order.paymentStatus === "paid" ? "ok" : order.paymentStatus === "failed" ? "bad" : "neutral";
+  const payText = t.order.paymentStatuses[order.paymentStatus];
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:gap-12">
       <div className="space-y-8">
-        <section aria-labelledby="h-status" className="rounded-lg bg-white/60 p-5 ring-1 ring-line md:p-6">
+        <section aria-labelledby="h-status" className="rounded-lg bg-surface/60 p-5 ring-1 ring-line md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="h-status" className="font-serif text-2xl">{t.order.status}</h2>
             <StatusBadge text={t.order.statuses[order.status]} tone={off ? "bad" : order.status === "delivered" ? "ok" : "neutral"} />
@@ -60,9 +62,9 @@ export function OrderDetails({ order, t, actions }: { order: OrderViewDTO; t: Di
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="block">{i.name}</span>
                     <span className="block text-xs text-muted">{i.size !== "One Size" && `${i.size} · `}{i.colour} · {i.sku}</span>
-                    <span className="mt-1 block text-xs text-muted">{i.qty} × {formatBDT(i.unitPrice)}</span>
+                    <span className="mt-1 block text-xs text-muted">{i.qty} × {formatMoney(i.unitPrice)}</span>
                   </span>
-                  <span className="text-sm">{formatBDT(i.lineTotal)}</span>
+                  <span className="text-sm">{formatMoney(i.lineTotal)}</span>
                 </li>
               );
             })}
@@ -85,22 +87,25 @@ export function OrderDetails({ order, t, actions }: { order: OrderViewDTO; t: Di
       </div>
 
       <aside className="space-y-6 self-start">
-        <div className="rounded-lg bg-white/60 p-5 ring-1 ring-line md:p-6">
+        <div className="rounded-lg bg-surface/60 p-5 ring-1 ring-line md:p-6">
           <dl className="space-y-2 text-sm">
-            <div className="flex justify-between"><dt>{t.checkout.subtotal}</dt><dd>{formatBDT(order.subtotal)}</dd></div>
-            {order.discount > 0 && <div className="flex justify-between text-success"><dt>{t.checkout.discount}{order.couponCode && ` (${order.couponCode})`}</dt><dd>−{formatBDT(order.discount)}</dd></div>}
-            <div className="flex justify-between"><dt>{t.checkout.deliveryFee} · {order.delivery.name}</dt><dd>{order.delivery.fee ? formatBDT(order.delivery.fee) : t.checkout.free}</dd></div>
-            <div className="flex justify-between border-t border-line pt-3 text-base font-medium"><dt>{t.checkout.total}</dt><dd>{formatBDT(order.total)}</dd></div>
+            <div className="flex justify-between"><dt>{t.checkout.subtotal}</dt><dd>{formatMoney(order.subtotal)}</dd></div>
+            {order.discount > 0 && <div className="flex justify-between text-success"><dt>{t.checkout.discount}{order.couponCode && ` (${order.couponCode})`}</dt><dd>−{formatMoney(order.discount)}</dd></div>}
+            <div className="flex justify-between"><dt>{t.checkout.deliveryFee} · {order.delivery.name}</dt><dd>{order.delivery.fee ? formatMoney(order.delivery.fee) : t.checkout.free}</dd></div>
+            <div className="flex justify-between border-t border-line pt-3 text-base font-medium"><dt>{t.checkout.total}</dt><dd>{formatMoney(order.total)}</dd></div>
           </dl>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4 text-sm">
             <span>{t.order.payment}: {t.order.methods[order.paymentMethod]}</span>
             <StatusBadge text={payText} tone={payTone} />
           </div>
-          {order.trxId && <p className="mt-2 text-xs text-muted">{t.order.trx}: {order.trxId}</p>}
+          {order.paidWith && <p className="mt-2 text-xs text-muted">{t.order.paidWith}: {order.paidWith}</p>}
         </div>
-        <div className="rounded-lg bg-white/60 p-5 text-sm ring-1 ring-line md:p-6">
+        <div className="rounded-lg bg-surface/60 p-5 text-sm ring-1 ring-line md:p-6">
           <p className="label text-muted">{t.order.deliverTo}</p>
-          <p className="mt-2">{order.address.name} · {order.address.phone}<br />{order.address.addressLine}<br />{order.address.upazila}, {order.address.district}, {order.address.division}</p>
+          <p className="mt-2">
+            {order.address.name} · {formatPhone(order.address.phone)}
+            {addressLines(order.address).map((l) => <span key={l} className="block">{l}</span>)}
+          </p>
           {order.note && <><p className="label mt-4 text-muted">{t.order.note}</p><p className="mt-1 whitespace-pre-line">{order.note}</p></>}
         </div>
       </aside>

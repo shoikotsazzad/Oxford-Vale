@@ -3,6 +3,7 @@
 /* Oxford Vale design tokens (project CLAUDE.md → Design). */
 @theme {
   --color-paper: #f7f5f0; /* page background */
+  --color-surface: #ffffff; /* cards, inputs, dropdowns */
   --color-ink: #111111; /* text, primary buttons */
   --color-charcoal: #1e1e1e; /* dark panels */
   --color-night: #0d0d0d; /* category band */
@@ -16,23 +17,35 @@
   --color-info: #2c4a6b; /* admin: in progress */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
-  --font-bangla: var(--font-hind), var(--font-inter), sans-serif;
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+/* Dark theme: same token names, so every component switches. Set on <html> by the theme script (system default, or the
+   visitor's choice from the header toggle). All text pairs checked for WCAG AA. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #121110;
+  --color-surface: #1a1917;
+  --color-ink: #ece7df;
+  --color-charcoal: #1d1b19;
+  --color-night: #0b0a09;
+  --color-muted: #a59e93;
+  --color-line: #2e2b27;
+  --color-sand: #1e1c19;
+  --color-sale: #e0857c;
+  --color-success: #7dbb8c;
+  --color-danger: #ec8b8b;
+  --color-warn: #d9a75a;
+  --color-info: #8fb3dc;
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-}
-
-/* Bangla UI: Hind Siliguri, slightly larger and looser for legibility. */
-.lang-bn {
-  font-family: var(--font-bangla);
-  font-size: 1.04rem;
-  line-height: 1.7;
 }
 
 /* Small uppercase tracked labels: nav, eyebrows, buttons. */

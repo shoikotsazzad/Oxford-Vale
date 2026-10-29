@@ -1,6 +1,6 @@
 import { Schema, type InferSchemaType, type Types } from "mongoose";
 import { defineModel } from "./_model";
-import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "./shared";
+import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES, postalFields } from "./shared";
 
 /** OrderItem: an embedded price snapshot, always read with its order. */
 const OrderItemSchema = new Schema(
@@ -31,14 +31,7 @@ const OrderSchema = new Schema(
       phone: { type: String, required: true, index: true },
       email: { type: String, default: "" },
     },
-    shippingAddress: {
-      name: { type: String, required: true },
-      phone: { type: String, required: true },
-      division: { type: String, required: true },
-      district: { type: String, required: true },
-      upazila: { type: String, required: true },
-      addressLine: { type: String, required: true },
-    },
+    shippingAddress: postalFields,
     items: { type: [OrderItemSchema], required: true },
     subtotal: { type: Number, required: true },
     couponCode: String,
@@ -54,13 +47,11 @@ const OrderSchema = new Schema(
     note: { type: String, default: "" },
     paymentMethod: { type: String, enum: PAYMENT_METHODS, required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: "unpaid", index: true },
+    // Provider references: Stripe Checkout session + payment intent, or PayPal order + capture.
     payment: {
-      trxId: String,
-      senderNumber: String,
-      submittedAt: Date,
+      sessionId: String,
       gatewayTranId: String,
-      valId: String,
-      verifiedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      brand: String,
       verifiedAt: Date,
     },
     status: { type: String, enum: ORDER_STATUSES, default: "pending", index: true },

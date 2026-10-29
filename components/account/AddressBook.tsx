@@ -5,6 +5,8 @@ import { useI18n } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, TextField } from "@/components/ui/Field";
 import { AddressFields, emptyAddress, type AddressValue } from "@/components/checkout/AddressFields";
+import { addressLines } from "@/lib/address";
+import { formatPhone } from "@/lib/phone";
 import { deleteAddress, saveAddress } from "@/server/actions/account";
 
 type Saved = AddressValue & { id: string; label: string; isDefault: boolean };
@@ -61,9 +63,10 @@ export function AddressBook({ addresses, defaults }: { addresses: Saved[]; defau
       {addresses.length === 0 && <p className="text-muted">{t.account.noAddresses}</p>}
       <ul className="grid gap-4 sm:grid-cols-2">
         {addresses.map((a) => (
-          <li key={a.id} className="rounded-lg bg-white/60 p-5 text-sm ring-1 ring-line">
-            <p className="flex items-center gap-2 font-medium">{a.label}{a.isDefault && <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] tracking-wide text-white uppercase">{t.account.default}</span>}</p>
-            <p className="mt-2">{a.name} · {a.phone}<br />{a.addressLine}<br /><span className="text-muted">{a.upazila}, {a.district}, {a.division}</span></p>
+          <li key={a.id} className="rounded-lg bg-surface/60 p-5 text-sm ring-1 ring-line">
+            <p className="flex items-center gap-2 font-medium">{a.label}{a.isDefault && <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] tracking-wide text-paper uppercase">{t.account.default}</span>}</p>
+            <p className="mt-2">{a.name} · {formatPhone(a.phone)}</p>
+            <p className="text-muted">{addressLines(a).join(", ")}</p>
             <div className="mt-4 flex gap-4">
               <button type="button" onClick={() => open({ ...a })} className="min-h-9 text-xs underline underline-offset-4">{t.account.edit}</button>
               <button type="button" disabled={pending} onClick={() => {

@@ -4,7 +4,8 @@ import { CartModel, LeadModel, nextSeq, OrderModel, ProductModel, VariantModel, 
 import { computeTotals, unitPriceOf, type Totals } from "./pricing";
 import { claimCoupon, CouponError, releaseCoupon, validateCoupon } from "./coupon";
 import { releaseStock, reserveStock, restoreOrderStock, StockError } from "./stock";
-import { resolveZone, type AddressArea } from "./zone-match";
+import { optionsFor, pickOption } from "./zone-match";
+import { londonDateParts } from "@/lib/dates";
 import { upsertLead } from "./lead";
 import { syncProductSummary } from "./catalog-sync";
 import { findCart } from "./cart";
@@ -17,12 +18,13 @@ export class OrderError extends Error {
 }
 
 export type CheckoutContact = { name: string; phone: string; email: string };
-export type CheckoutAddress = AddressArea & { name: string; phone: string; addressLine: string };
+export type CheckoutAddress = { name: string; phone: string; line1: string; line2: string; city: string; county: string; postcode: string; country: string };
 export type StoreRules = {
   zones: ZoneDTO[];
   freeDeliveryThreshold: number;
-  payments: { cod: boolean; sslcommerz: boolean; bkash: { enabled: boolean }; nagad: { enabled: boolean } };
+  payments: Record<PaymentMethod, boolean>;
 };
+export type DeliveryChoice = { country: string; optionId?: string | null };
 
 type PricedLine = {
   product: Types.ObjectId; variant: Types.ObjectId; sku: string; name: string; slug: string; size: string; colour: string;
@@ -62,11 +64,20 @@ export async function priceCart(cartToken: string | undefined) {
   return { cart, lines, problems };
 }
 
-export type Quote = Totals & { zone: { id: string; name: string; fee: number; etaMinDays: number; etaMaxDays: number } | null; couponCode: string | null; couponError: string | null };
+type OptionView = { id: string; name: string; fee: number; etaMinDays: number; etaMaxDays: number; note: string; free: boolean };
+export type Quote = Totals & {
+  zone: OptionView | null;
+  /** Delivery options for the chosen country (fees after free delivery). */
+  options: OptionView[];
+  couponCode: string | null;
+  couponError: string | null;
+};
 
 /** Totals for the checkout summary (and the order itself). */
-export async function quote(lines: { unitPrice: number; qty: number }[], rules: StoreRules, opts: { address?: AddressArea | null; couponCode?: string | null; phone?: string }): Promise<Quote & { coupon: Awaited<ReturnType<typeof validateCoupon>> | null }> {
-  const zone = opts.address?.district ? resolveZone(rules.zones, opts.address) : null;
+export async function quote(lines: { unitPrice: number; qty: number }[], rules: StoreRules, opts: { delivery?: DeliveryChoice | null; couponCode?: string | null; phone?: string }): Promise<Quote & { coupon: Awaited<ReturnType<typeof validateCoupon>> | null }> {
+  const country = opts.delivery?.country;
+  const available = country ? optionsFor(rules.zones, country) : [];
+  const zone = country ? (pickOption(rules.zones, country, opts.delivery?.optionId) ?? available[0] ?? null) : null;
   const subtotal = lines.reduce((n, l) => n + l.unitPrice * l.qty, 0);
   let coupon: Awaited<ReturnType<typeof validateCoupon>> | null = null;
   let couponError: string | null = null;
@@ -78,33 +89,40 @@ export async function quote(lines: { unitPrice: number; qty: number }[], rules: 
       couponError = err.message;
     }
   }
-  const totals = computeTotals({ lines, coupon, deliveryFee: zone?.fee ?? null, freeDeliveryThreshold: rules.freeDeliveryThreshold });
+  const totalsFor = (z: ZoneDTO | null) =>
+    computeTotals({ lines, coupon, deliveryFee: z?.fee ?? null, freeDeliveryThreshold: z?.freeEligible ? rules.freeDeliveryThreshold : 0 });
+  const view = (z: ZoneDTO): OptionView => {
+    const t = totalsFor(z);
+    return { id: z.id, name: z.name, fee: t.deliveryFee, etaMinDays: z.etaMinDays, etaMaxDays: z.etaMaxDays, note: z.note, free: t.freeDelivery };
+  };
+  // The free-delivery gap shown in the bag always refers to the free option, even before an option is chosen.
+  const totals = { ...totalsFor(zone), freeDeliveryGap: computeTotals({ lines, coupon, freeDeliveryThreshold: rules.freeDeliveryThreshold }).freeDeliveryGap };
   return {
     ...totals,
-    zone: zone ? { id: zone.id, name: zone.name, fee: zone.fee, etaMinDays: zone.etaMinDays, etaMaxDays: zone.etaMaxDays } : null,
+    zone: zone ? view(zone) : null,
+    options: available.map(view),
     couponCode: coupon?.code ?? null,
     couponError,
     coupon,
   };
 }
 
-/** "OV-261022-0001": date in Bangladesh time + a daily sequence. */
+/** "OV-261022-0001": date in UK time (GMT/BST) + a daily sequence. */
 export async function nextOrderNo(now = new Date()) {
-  const d = new Date(now.getTime() + 6 * 3600_000); // UTC+6, no DST
-  const ymd = `${String(d.getUTCFullYear()).slice(2)}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
+  const { y, m, d } = londonDateParts(now);
+  const ymd = `${String(y).slice(2)}${String(m).padStart(2, "0")}${String(d).padStart(2, "0")}`;
   const seq = await nextSeq(`order-${ymd}`);
   return `OV-${ymd}-${String(seq).padStart(4, "0")}`;
 }
 
-export function isPaymentEnabled(method: PaymentMethod, rules: StoreRules) {
-  return method === "cod" ? rules.payments.cod : method === "sslcommerz" ? rules.payments.sslcommerz : rules.payments[method].enabled;
-}
+export const isPaymentEnabled = (method: PaymentMethod, rules: StoreRules) => Boolean(rules.payments[method]);
 
 export type PlaceOrderInput = {
   cartToken: string | undefined;
   userId?: string | null;
   contact: CheckoutContact;
   address: CheckoutAddress;
+  deliveryOption: string;
   paymentMethod: PaymentMethod;
   couponCode?: string | null;
   note?: string;
@@ -116,8 +134,10 @@ export async function placeOrder(input: PlaceOrderInput, rules: StoreRules) {
   if (!lines.length) throw new OrderError("NOT_FOUND", "Your bag is empty.");
   if (!isPaymentEnabled(input.paymentMethod, rules)) throw new OrderError("VALIDATION", "This payment method isn't available right now.", { paymentMethod: "Choose another payment method." });
 
-  const q = await quote(lines, rules, { address: input.address, couponCode: input.couponCode, phone: input.contact.phone });
-  if (!q.zone) throw new OrderError("VALIDATION", "We can't deliver to this address yet.", { upazila: "We can't deliver to this area yet." });
+  const q = await quote(lines, rules, { delivery: { country: input.address.country, optionId: input.deliveryOption }, couponCode: input.couponCode, phone: input.contact.phone });
+  if (!q.zone || q.zone.id !== input.deliveryOption) {
+    throw new OrderError("VALIDATION", "Choose a delivery option for this country.", { deliveryOption: "Choose a delivery option." });
+  }
   if (q.couponError) throw new OrderError("VALIDATION", q.couponError, { couponCode: q.couponError });
 
   // Reserve stock, then the coupon; undo in reverse order on any failure.
@@ -144,8 +164,8 @@ export async function placeOrder(input: PlaceOrderInput, rules: StoreRules) {
         lead: leadId,
         customer: input.contact,
         shippingAddress: {
-          name: input.address.name, phone: input.address.phone, division: input.address.division, district: input.address.district,
-          upazila: input.address.upazila, addressLine: input.address.addressLine,
+          name: input.address.name, phone: input.address.phone, line1: input.address.line1, line2: input.address.line2,
+          city: input.address.city, county: input.address.county, postcode: input.address.postcode, country: input.address.country,
         },
         items: lines.map(({ stock: _s, slug: _slug, ...l }) => l),
         subtotal: q.subtotal,
@@ -188,7 +208,7 @@ export async function cancelOrder(orderNo: string, by: "customer" | "admin" | "s
   return order;
 }
 
-/** Mark an online payment as paid (SSLCommerz validated, or admin verified a bKash/Nagad transaction). */
+/** Mark an order paid once the provider (Stripe or PayPal) has confirmed the payment server-side. */
 export async function markOrderPaid(orderNo: string, payment: Record<string, unknown>, note: string, by?: string) {
   const order = await OrderModel.findOneAndUpdate(
     { orderNo, paymentStatus: { $ne: "paid" }, status: { $nin: ["cancelled", "refunded"] } },

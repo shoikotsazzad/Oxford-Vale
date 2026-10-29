@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CollectionModel, CouponModel, OrderModel, ProductModel, VariantModel } from "@/models";
 import { addItem } from "@/server/services/cart";
-import { placeOrder, type StoreRules } from "@/server/services/order";
-import { rejectManualPayment, transitionOrder, TRANSITIONS, verifyManualPayment } from "@/server/services/order-admin";
+import { markOrderPaid, placeOrder, type StoreRules } from "@/server/services/order";
+import { transitionOrder, TRANSITIONS } from "@/server/services/order-admin";
 import { duplicateProduct, saveProduct, type ProductData } from "@/server/services/product-admin";
-import { dhakaDayStart, getDashboard } from "@/server/services/admin-dashboard";
+import { getDashboard } from "@/server/services/admin-dashboard";
 import { orderFilter } from "@/server/services/admin-orders";
 import { listCustomers } from "@/server/services/admin-customers";
 import { can } from "@/server/auth/rbac";
@@ -18,19 +18,22 @@ beforeAll(startDb);
 afterAll(stopDb);
 beforeEach(clearDb);
 
+const ZONE = "000000000000000000000001";
 const rules: StoreRules = {
-  zones: [{ id: "000000000000000000000001", name: "Everywhere", fee: 100, etaMinDays: 1, etaMaxDays: 3, match: { divisions: [], districts: [], areas: [] } }],
+  zones: [{ id: ZONE, name: "Everywhere", fee: 595, etaMinDays: 1, etaMaxDays: 3, countries: [], freeEligible: false, note: "" }],
   freeDeliveryThreshold: 0,
-  payments: { cod: true, sslcommerz: true, bkash: { enabled: true }, nagad: { enabled: true } },
+  payments: { stripe: true, paypal: true },
 };
-const contact = { name: "Test Customer", phone: "01700000009", email: "test@example.com" };
-const address = { name: "Test Customer", phone: "01700000009", division: "Dhaka", district: "Dhaka", upazila: "Gulshan", addressLine: "House 1" };
+const contact = { name: "Test Customer", phone: "07700900009", email: "test@example.com" };
+const address = { name: "Test Customer", phone: "07700900009", line1: "1 Test Street", line2: "", city: "London", county: "", postcode: "W1S 3PR", country: "GB" };
 const admin = { id: "000000000000000000000abc", name: "Admin" };
 
-async function order(paymentMethod: "cod" | "bkash" = "cod", qty = 2, couponCode?: string) {
+/** A placed order; `paid` confirms it the way the Stripe / PayPal return does. */
+async function order({ paid = true, qty = 2, couponCode }: { paid?: boolean; qty?: number; couponCode?: string } = {}) {
   const fx = await seedProduct();
   const { token } = await addItem(undefined, String(fx.m._id), qty);
-  const { order } = await placeOrder({ cartToken: token, contact, address, paymentMethod, couponCode }, rules);
+  const { order } = await placeOrder({ cartToken: token, contact, address, deliveryOption: ZONE, paymentMethod: "stripe", couponCode }, rules);
+  if (paid) await markOrderPaid(order.orderNo, { gatewayTranId: "pi_test", brand: "card (visa)" }, "Paid online via Stripe");
   return { ...fx, order };
 }
 const stockOf = async (id: unknown) => (await VariantModel.findById(id).lean())!.stock;
@@ -49,29 +52,35 @@ describe("RBAC", () => {
 
 describe("order status changes", () => {
   it("only allows the defined transitions", async () => {
-    const { order: o } = await order();
+    const { order: o } = await order({ paid: false });
     await expect(transitionOrder(o.orderNo, { to: "delivered" }, admin)).rejects.toMatchObject({ code: "CONFLICT" });
     expect(TRANSITIONS.refunded).toEqual([]);
   });
 
-  it("walks an order to delivered; COD becomes paid on delivery; history records who did it", async () => {
+  it("won't confirm an unpaid order by hand; an unpaid order can only be cancelled", async () => {
+    const { order: o } = await order({ paid: false });
+    await expect(transitionOrder(o.orderNo, { to: "confirmed" }, admin)).rejects.toMatchObject({ code: "CONFLICT" });
+    await transitionOrder(o.orderNo, { to: "cancelled" }, admin);
+    expect((await OrderModel.findOne({ orderNo: o.orderNo }).lean())!.status).toBe("cancelled");
+  });
+
+  it("walks a paid order to delivered; history records who did it", async () => {
     const { order: o } = await order();
-    await transitionOrder(o.orderNo, { to: "confirmed" }, admin);
+    expect((await OrderModel.findOne({ orderNo: o.orderNo }).lean())!.status).toBe("confirmed"); // payment confirms it
     await transitionOrder(o.orderNo, { to: "processing" }, admin);
     await expect(transitionOrder(o.orderNo, { to: "shipped" }, admin)).rejects.toMatchObject({ code: "VALIDATION" }); // courier required
-    await transitionOrder(o.orderNo, { to: "shipped", courier: "Pathao", trackingNo: "P123" }, admin);
+    await transitionOrder(o.orderNo, { to: "shipped", courier: "Royal Mail", trackingNo: "RM123GB" }, admin);
     await transitionOrder(o.orderNo, { to: "delivered", note: "Signed by customer" }, admin);
     const saved = (await OrderModel.findOne({ orderNo: o.orderNo }).lean())!;
-    expect(saved).toMatchObject({ status: "delivered", paymentStatus: "paid", shipment: { courier: "Pathao", trackingNo: "P123" } });
+    expect(saved).toMatchObject({ status: "delivered", paymentStatus: "paid", shipment: { courier: "Royal Mail", trackingNo: "RM123GB" } });
     expect(saved.statusHistory.map((h) => h.status)).toEqual(["pending", "confirmed", "processing", "shipped", "delivered"]);
     expect(String(saved.statusHistory.at(-1)!.by)).toBe(admin.id);
   });
 
   it("cancelling after confirmation restores stock and coupon use exactly once", async () => {
     await CouponModel.create({ code: "TEN", type: "fixed", value: 10, minOrder: 0, expiresAt: new Date(Date.now() + 864e5) });
-    const { order: o, m } = await order("cod", 2, "TEN");
+    const { order: o, m } = await order({ couponCode: "TEN" });
     expect(await stockOf(m._id)).toBe(1);
-    await transitionOrder(o.orderNo, { to: "confirmed" }, admin);
     const res = await transitionOrder(o.orderNo, { to: "cancelled" }, admin);
     expect(res.stockRestored).toBe(true);
     expect(await stockOf(m._id)).toBe(3);
@@ -81,7 +90,7 @@ describe("order status changes", () => {
 
   it("returned orders restock only when asked; refunds need a paid order", async () => {
     const { order: o, m } = await order();
-    for (const to of ["confirmed", "shipped"] as const) await transitionOrder(o.orderNo, { to, courier: "RedX" }, admin);
+    await transitionOrder(o.orderNo, { to: "shipped", courier: "DPD" }, admin);
     await transitionOrder(o.orderNo, { to: "delivered" }, admin);
     await transitionOrder(o.orderNo, { to: "returned", restock: true }, admin);
     expect(await stockOf(m._id)).toBe(3);
@@ -89,48 +98,9 @@ describe("order status changes", () => {
     expect((await OrderModel.findOne({ orderNo: o.orderNo }).lean())!.paymentStatus).toBe("refunded");
 
     const { token } = await addItem(undefined, String(m._id), 1);
-    const { order: unpaid } = await placeOrder({ cartToken: token, contact, address, paymentMethod: "cod" }, rules);
+    const { order: unpaid } = await placeOrder({ cartToken: token, contact, address, deliveryOption: ZONE, paymentMethod: "stripe" }, rules);
     await transitionOrder(unpaid.orderNo, { to: "cancelled" }, admin);
     await expect(transitionOrder(unpaid.orderNo, { to: "refunded" }, admin)).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-});
-
-describe("bKash / Nagad verification", () => {
-  async function submitted() {
-    const fx = await order("bkash");
-    await OrderModel.updateOne({ orderNo: fx.order.orderNo }, { "payment.trxId": "TRX1", "payment.senderNumber": "01711111111", "payment.submittedAt": new Date() });
-    return fx;
-  }
-
-  it("verifying marks the order paid and confirmed, recording the admin", async () => {
-    const { order: o } = await submitted();
-    await verifyManualPayment(o.orderNo, admin);
-    const saved = (await OrderModel.findOne({ orderNo: o.orderNo }).lean())!;
-    expect(saved).toMatchObject({ paymentStatus: "paid", status: "confirmed" });
-    expect(String(saved.payment?.verifiedBy)).toBe(admin.id);
-    await expect(verifyManualPayment(o.orderNo, admin)).rejects.toMatchObject({ code: "CONFLICT" });
-  });
-
-  it("verifying an order already moved on keeps its status", async () => {
-    const { order: o } = await submitted();
-    await transitionOrder(o.orderNo, { to: "confirmed" }, admin);
-    await transitionOrder(o.orderNo, { to: "processing" }, admin);
-    await verifyManualPayment(o.orderNo, admin);
-    expect((await OrderModel.findOne({ orderNo: o.orderNo }).lean())!).toMatchObject({ paymentStatus: "paid", status: "processing" });
-  });
-
-  it("rejecting clears the Trx ID so the customer can submit again", async () => {
-    const { order: o } = await submitted();
-    await rejectManualPayment(o.orderNo, "Trx ID not found", admin);
-    const saved = (await OrderModel.findOne({ orderNo: o.orderNo }).lean())!;
-    expect(saved.paymentStatus).toBe("failed");
-    expect(saved.payment?.trxId).toBeUndefined();
-    expect(saved.statusHistory.at(-1)!.note).toContain("Trx ID not found");
-  });
-
-  it("can't verify without a submitted transaction", async () => {
-    const { order: o } = await order("bkash");
-    await expect(verifyManualPayment(o.orderNo, admin)).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });
 
@@ -203,28 +173,28 @@ describe("product editor", () => {
 });
 
 describe("dashboard, filters, customers, CSV", () => {
-  it("counts sales by Dhaka day and excludes cancelled orders", async () => {
-    const { order: a } = await order("cod", 1);
+  it("counts sales by UK day, excludes cancelled orders and flags unpaid checkouts", async () => {
+    const { order: a } = await order({ paid: false, qty: 1 });
     await OrderModel.create({ ...a, _id: undefined, orderNo: "OV-X-1", status: "cancelled", statusHistory: [] });
     const d = await getDashboard(5);
     expect(d.today).toEqual({ revenue: a.total, orders: 1 });
     expect(d.chart).toHaveLength(30);
     expect(d.chart.at(-1)!.revenue).toBe(a.total);
     expect(d.attention.pending).toBe(1);
+    expect(d.attention.awaitingPayment).toBe(1);
     expect(d.lowStock.map((v) => v.sku)).toContain("OV-TST-001-WHI-L");
-    // 23:30 Dhaka on 22 Oct is still the 22nd.
-    expect(dhakaDayStart(new Date("2026-10-22T17:30:00Z")).toISOString()).toBe("2026-10-21T18:00:00.000Z");
   });
 
   it("builds order filters from query params and ignores junk", () => {
-    expect(orderFilter({ status: "pending,bogus", payment: "verify", method: "bkash" })).toMatchObject({
-      status: { $in: ["pending"] }, paymentMethod: "bkash", paymentStatus: { $ne: "paid" },
+    expect(orderFilter({ status: "pending,bogus", payment: "awaiting", method: "paypal" })).toMatchObject({
+      status: { $in: ["pending"] }, paymentMethod: "paypal", paymentStatus: { $in: ["unpaid", "failed"] },
     });
+    expect(orderFilter({ method: "cod" })).toEqual({});
     expect(orderFilter({ status: "nope", payment: "x", from: "2026-13-99x" })).toEqual({});
   });
 
   it("groups customers by phone with spend excluding cancelled orders", async () => {
-    const { order: a } = await order("cod", 1);
+    const { order: a } = await order({ paid: false, qty: 1 });
     await OrderModel.create({ ...a, _id: undefined, orderNo: "OV-X-2", status: "cancelled" });
     const { rows, total } = await listCustomers({});
     expect(total).toBe(1);

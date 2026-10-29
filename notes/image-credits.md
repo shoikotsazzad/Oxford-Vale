@@ -318,8 +318,8 @@ Home page photos in `public/brand/`. Stand-ins until real brand photography arri
 | `public/brand/cat-accessories.jpg` | `OV-ACC-005/1.webp` | MrJayW | [pixabay](https://pixabay.com/photos/business-man-jacket-costume-clock-3035214/) | Pixabay Content License |
 | `public/brand/cat-caps.jpg` | `OV-CAP-006/2.webp` | LEVEL_uP_PICTURES | [pixabay](https://pixabay.com/photos/fashion-model-man-beret-cap-style-6090834/) | Pixabay Content License |
 | `public/brand/cat-shoes.jpg` | `OV-SHO-001/2.webp` | tylermike525 | [pixabay](https://pixabay.com/photos/brogue-shoes-shoes-men-black-brogue-5994356/) | Pixabay Content License |
-| `public/brand/new-season.jpg` | `OV-SUT-009/2.webp` | luis_villatoro | [pixabay](https://pixabay.com/photos/man-model-portrait-hat-suit-pose-6462328/) | Pixabay Content License |
+| `public/brand/new-season.jpg` | Copy of `public/brand/new-season2.jpg`, supplied by the developer (2026-10-28) | Unknown | Source not recorded: confirm you have the rights before publishing | Not cleared |
 | `public/brand/col-heritage.jpg` | `OV-CAP-008/1.webp` | Sammy-Sander | [pixabay](https://pixabay.com/photos/man-detective-gangster-pipe-6307199/) | Pixabay Content License |
 | `public/brand/col-winter-edit.jpg` | `OV-OUT-017/1.webp` | Dimhou | [pixabay](https://pixabay.com/photos/man-fashion-model-rain-drops-4174727/) | Pixabay Content License |
 | `public/brand/col-limited-edition.jpg` | `OV-SUT-004/1.webp` | ernestflowerss | [pixabay](https://pixabay.com/photos/man-model-fashion-smile-look-8847064/) | Pixabay Content License |
-| `public/brand/shop-the-look.jpg` | `OV-SUT-014/2.webp` | Pankaj08 | [pixabay](https://pixabay.com/photos/man-suit-portrait-fashion-tie-5313320/) | Pixabay Content License |
+| `public/brand/shop-the-look.jpg` | Copy of `public/brand/The waistcoat.jpeg`, supplied by the developer (2026-10-28) | Unknown | Source not recorded: confirm you have the rights before publishing | Not cleared |

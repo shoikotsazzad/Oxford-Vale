@@ -4,6 +4,7 @@ import { CategoryModel, CollectionModel, OrderModel, ProductModel, VariantModel 
 import type { productSchema } from "@/lib/validation/admin";
 import { slugify } from "@/lib/slug";
 import { colourHex } from "@/lib/colours";
+import { toDollars } from "@/lib/money";
 import { syncProductSummary } from "./catalog-sync";
 import { diff, type Changes } from "./diff";
 import type { ProductFormValue } from "@/components/admin/ProductForm";
@@ -137,11 +138,11 @@ export async function productEditorData(id?: string) {
   const variants = await VariantModel.find({ product: id }).sort({ sortOrder: 1 }).lean();
   const initial: ProductFormValue = {
     name: p.name, slug: p.slug, skuBase: p.skuBase, category: String(p.category), collections: (p.collections ?? []).map(String), tags: (p.tags ?? []).join(", "),
-    description: p.description ?? "", fabric: p.fabric ?? "", careNotes: p.careNotes ?? "", price: p.price, salePrice: p.salePrice ?? "",
+    description: p.description ?? "", fabric: p.fabric ?? "", careNotes: p.careNotes ?? "", price: toDollars(p.price), salePrice: p.salePrice ? toDollars(p.salePrice) : "",
     status: p.status, sizeType: p.sizeType, seoTitle: p.seoTitle ?? "", seoDescription: p.seoDescription ?? "",
     images: [...(p.images ?? [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)).map((i) => ({ url: i.url, alt: i.alt ?? "" })),
     variants: variants.map((v) => ({
-      key: String(v._id), id: String(v._id), sku: v.sku, size: v.size, colour: v.colour, colourHex: v.colourHex ?? "", stock: v.stock, priceOverride: v.priceOverride ?? "", isActive: v.isActive,
+      key: String(v._id), id: String(v._id), sku: v.sku, size: v.size, colour: v.colour, colourHex: v.colourHex ?? "", stock: v.stock, priceOverride: v.priceOverride ? toDollars(v.priceOverride) : "", isActive: v.isActive,
     })),
   };
   return { ...options, product: { id: String(p._id), name: p.name, slug: p.slug, status: p.status }, initial };

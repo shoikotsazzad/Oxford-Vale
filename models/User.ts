@@ -10,7 +10,6 @@ const UserSchema = new Schema(
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ROLES, default: "customer", index: true },
     addresses: { type: [AddressSchema], default: [] },
-    wishlist: [{ type: Schema.Types.ObjectId, ref: "Product" }],
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
   },

@@ -34,7 +34,7 @@ async function Collections({ searchParams }: PageProps<"/admin/collections">) {
 
   return (
     <>
-      <PageHeader title="Collections" text="Curated groups like Best Sellers. The home page “Best of” row shows the Best Sellers collection in this order." actions={editable && !form && <Link href="/admin/collections?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-white hover:bg-charcoal">Add collection</Link>} />
+      <PageHeader title="Collections" text="Curated groups like Best Sellers. The home page “Best of” row shows the Best Sellers collection in this order." actions={editable && !form && <Link href="/admin/collections?edit=new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Add collection</Link>} />
       {!editable && <ReadOnlyNote />}
       {form && (
         <Card title={form.id ? `Edit ${form.name}` : "New collection"} className="mb-6">

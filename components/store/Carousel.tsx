@@ -21,7 +21,7 @@ export function Carousel({ children, label, prevLabel, nextLabel }: { children: 
   }, []);
 
   const go = (dir: 1 | -1) => track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.8, behavior: "smooth" });
-  const btn = "flex h-11 w-11 items-center justify-center rounded-full border border-ink/20 bg-paper transition-colors hover:border-ink hover:bg-ink hover:text-white disabled:pointer-events-none disabled:opacity-30";
+  const btn = "flex h-11 w-11 items-center justify-center rounded-full border border-ink/20 bg-paper transition-colors hover:border-ink hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:opacity-30";
 
   return (
     <div>

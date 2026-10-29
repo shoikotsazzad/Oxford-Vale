@@ -11,7 +11,7 @@ export function Ticker({ items }: { items: string[] }) {
     </ul>
   );
   return (
-    <div className="ticker overflow-hidden bg-ink py-4 text-white md:py-5">
+    <div className="ticker overflow-hidden bg-night py-4 text-white md:py-5">
       <div className="ticker-track flex w-max">
         {row()}
         {row(true)}

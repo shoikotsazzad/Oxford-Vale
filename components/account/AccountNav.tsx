@@ -11,7 +11,6 @@ export function AccountNav() {
     { href: "/account", label: t.account.overview },
     { href: "/account/orders", label: t.account.orders },
     { href: "/account/addresses", label: t.account.addresses },
-    { href: "/account/wishlist", label: t.account.wishlist },
   ];
   const active = (href: string) => (href === "/account" ? pathname === href : pathname.startsWith(href));
   return (
@@ -20,7 +19,7 @@ export function AccountNav() {
         {links.map((l) => (
           <li key={l.href}>
             <Link href={l.href} aria-current={active(l.href) ? "page" : undefined}
-              className={`flex min-h-11 items-center rounded-md px-4 text-sm whitespace-nowrap ${active(l.href) ? "bg-ink text-white" : "hover:bg-sand"}`}>
+              className={`flex min-h-11 items-center rounded-md px-4 text-sm whitespace-nowrap ${active(l.href) ? "bg-ink text-paper" : "hover:bg-sand"}`}>
               {l.label}
             </Link>
           </li>

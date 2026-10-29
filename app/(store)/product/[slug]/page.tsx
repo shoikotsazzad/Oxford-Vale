@@ -5,16 +5,16 @@ import { getSettings } from "@/server/services/settings";
 import { getProductBySlug, getRelatedProducts } from "@/server/services/catalog";
 import { buildMetadata } from "@/lib/seo";
 import { fmt, type Dict } from "@/lib/i18n";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { sizeTypeLabel } from "@/lib/size-ranges";
-import { whatsappLink } from "@/lib/contact";
+import { mailtoLink } from "@/lib/contact";
 import { site } from "@/data/site";
 import type { SizeType } from "@/models/enums";
 import { Container } from "@/components/Container";
 import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProductGridSkeleton, ProductSkeleton } from "@/components/ui/Skeleton";
-import { WhatsAppIcon } from "@/components/ui/icons";
+import { MailIcon } from "@/components/ui/icons";
 import { Gallery } from "@/components/store/Gallery";
 import { PurchasePanel } from "@/components/store/PurchasePanel";
 import { ProductRow } from "@/components/store/ProductRow";
@@ -49,7 +49,7 @@ async function ProductPageContent({ params }: PageProps<"/product/[slug]">) {
     { title: t.product.description, body: product.description, open: true },
     { title: t.product.fabric, body: product.fabric },
     { title: t.product.care, body: product.careNotes },
-    { title: t.product.delivery, body: fmt(t.product.deliveryNote, { amount: formatBDT(settings.freeDeliveryThreshold) }) },
+    { title: t.product.delivery, body: fmt(t.product.deliveryNote, { amount: formatMoney(settings.freeDeliveryThreshold) }) },
   ].filter((d) => d.body);
 
   return (
@@ -80,12 +80,10 @@ async function ProductPageContent({ params }: PageProps<"/product/[slug]">) {
             </div>
 
             <a
-              href={whatsappLink(settings.contact.whatsapp, `Hello ${settings.storeName}, I'm interested in ${product.name} (${product.skuBase}). ${site.url}/product/${product.slug}`)}
-              target="_blank"
-              rel="noopener"
+              href={mailtoLink(settings.contact.email, `Question about ${product.name} (${product.skuBase})`)}
               className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm underline-offset-4 hover:underline"
             >
-              <WhatsAppIcon size={18} className="text-[#25D366]" /> {t.product.whatsapp}
+              <MailIcon size={18} /> {t.product.ask}
             </a>
 
             <div className="mt-8 divide-y divide-line border-y border-line">

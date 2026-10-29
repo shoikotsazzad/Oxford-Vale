@@ -4,7 +4,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LockIcon } from "@/components/ui/icons";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import type { CartView } from "@/lib/types";
 import { useCart } from "./CartProvider";
 import { CartLines, CartNotices, FreeDeliveryBar } from "./CartLines";
@@ -31,14 +31,14 @@ export function CartPageClient({ initial }: { initial: CartView }) {
         <div className="border-y border-line"><CartLines lines={view.lines} /></div>
         <ButtonLink href="/shop" variant="secondary" className="mt-6">{t.cart.continue}</ButtonLink>
       </div>
-      <aside className="self-start rounded-lg bg-white/60 p-6 ring-1 ring-line lg:sticky lg:top-28">
+      <aside className="self-start rounded-lg bg-surface/60 p-6 ring-1 ring-line lg:sticky lg:top-28">
         <FreeDeliveryBar gap={view.freeDeliveryGap} threshold={view.freeDeliveryThreshold} />
         <dl className="mt-6 space-y-2 text-sm">
-          <div className="flex justify-between"><dt>{t.cart.subtotal} ({view.count === 1 ? t.cart.itemCountOne : t.cart.itemCount.replace("{n}", String(view.count))})</dt><dd>{formatBDT(view.subtotal)}</dd></div>
+          <div className="flex justify-between"><dt>{t.cart.subtotal} ({view.count === 1 ? t.cart.itemCountOne : t.cart.itemCount.replace("{n}", String(view.count))})</dt><dd>{formatMoney(view.subtotal)}</dd></div>
         </dl>
         <p className="mt-2 text-xs text-muted">{t.cart.deliveryNote}</p>
         <ButtonLink href="/checkout" className="mt-6 w-full" arrow>{t.cart.checkout}</ButtonLink>
-        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted"><LockIcon size={14} /> Cash on Delivery · bKash · Nagad · Cards</p>
+        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted"><LockIcon size={14} /> Cards · Apple Pay · Google Pay · PayPal · Klarna</p>
       </aside>
     </div>
   );

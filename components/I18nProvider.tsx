@@ -1,11 +1,11 @@
 "use client";
 import { createContext, useContext } from "react";
-import type { Dict, Lang } from "@/lib/i18n";
+import type { Dict } from "@/lib/i18n";
 
-const Ctx = createContext<{ lang: Lang; t: Dict } | null>(null);
+const Ctx = createContext<{ t: Dict } | null>(null);
 
-export function I18nProvider({ lang, t, children }: { lang: Lang; t: Dict; children: React.ReactNode }) {
-  return <Ctx.Provider value={{ lang, t }}>{children}</Ctx.Provider>;
+export function I18nProvider({ t, children }: { t: Dict; children: React.ReactNode }) {
+  return <Ctx.Provider value={{ t }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

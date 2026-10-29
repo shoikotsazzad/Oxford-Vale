@@ -3,8 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
-import { BagIcon, ChevronDownIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/icons";
-import { LanguageToggle } from "./LanguageToggle";
+import { BagIcon, ChevronDownIcon, CloseIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SearchPanel } from "./SearchPanel";
 import { useCart } from "@/components/cart/CartProvider";
 
@@ -18,6 +18,9 @@ type Props = {
 };
 
 type Panel = "menu" | "search" | "all" | null;
+
+/** Dispatch on window to open the header search from anywhere on the page. */
+export const OPEN_SEARCH_EVENT = "ov:open-search";
 
 export function HeaderClient({ storeName, tagline, navLinks, allCategories, collections }: Props) {
   const { t } = useI18n();
@@ -53,6 +56,13 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
     };
   }, [panel]);
 
+  // The home page's mobile search pill opens the same search panel.
+  useEffect(() => {
+    const onOpen = () => setState({ panel: "search", path: window.location.pathname });
+    window.addEventListener(OPEN_SEARCH_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_SEARCH_EVENT, onOpen);
+  }, []);
+
   // The mega menu is a dropdown, not a page section: scrolling away closes it.
   useEffect(() => {
     if (panel !== "all") return;
@@ -73,7 +83,7 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 md:h-20 lg:px-8">
         {/* Left: categories (desktop) / menu button (mobile) */}
         <nav aria-label="Categories" className="flex items-center">
-          <button type="button" className={`${iconBtn} -ml-2 xl:hidden`} aria-label={t.nav.menu} aria-expanded={panel === "menu"} aria-controls="mobile-menu" onClick={() => open("menu")}>
+          <button type="button" className={`${iconBtn} -ml-2 hidden lg:flex xl:hidden`} aria-label={t.nav.menu} aria-expanded={panel === "menu"} aria-controls="mobile-menu" onClick={() => open("menu")}>
             <MenuIcon size={22} />
           </button>
           <ul className="hidden items-center gap-5 xl:flex">
@@ -113,15 +123,12 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
 
         {/* Right: icons */}
         <div className="flex items-center justify-end gap-0.5 md:gap-1">
-          <button type="button" className={iconBtn} aria-label={t.nav.search} onClick={() => open("search")}>
+          <button type="button" className={`${iconBtn} hidden lg:flex`} aria-label={t.nav.search} onClick={() => open("search")}>
             <SearchIcon />
           </button>
-          <LanguageToggle className="hidden px-2 md:block" />
-          <Link href="/account" className={`${iconBtn} hidden md:flex`} aria-label={t.nav.account}>
+          <ThemeToggle className={`${iconBtn} max-lg:-mr-2`} />
+          <Link href="/account" className={`${iconBtn} hidden lg:flex`} aria-label={t.nav.account}>
             <UserIcon />
-          </Link>
-          <Link href="/account/wishlist" className={`${iconBtn} hidden md:flex`} aria-label={t.nav.wishlist}>
-            <HeartIcon />
           </Link>
           <Link
             href="/cart"
@@ -130,19 +137,19 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
               e.preventDefault();
               openDrawer();
             }}
-            className={`${iconBtn} -mr-2`}
+            className={`${iconBtn} -mr-2 hidden lg:flex`}
           >
             <BagIcon />
             {/* Name = "Cart, 2": includes the visible count (WCAG label-in-name). */}
             <span className="sr-only">{t.nav.cart}, </span>
-            <span className="absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] leading-none text-white">{cartCount}</span>
+            <span className="absolute top-1.5 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] leading-none text-paper">{cartCount}</span>
           </Link>
         </div>
       </div>
 
       {/* "All" mega menu (desktop) */}
       {panel === "all" && (
-        <div className="absolute inset-x-0 top-full hidden h-dvh bg-ink/20 xl:block" onClick={close} aria-hidden="true" />
+        <div className="absolute inset-x-0 top-full hidden h-dvh bg-black/30 xl:block" onClick={close} aria-hidden="true" />
       )}
       {panel === "all" && (
         <div id="all-menu" onPointerEnter={hoverOpen} onPointerLeave={hoverClose} className="absolute inset-x-0 top-full hidden border-b border-line bg-paper shadow-sm xl:block">
@@ -170,7 +177,7 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
 
       {/* Search overlay */}
       {panel === "search" && (
-        <div className="fixed inset-0 z-50 bg-ink/40" onClick={close}>
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={close}>
           <div role="dialog" aria-modal="true" aria-label={t.nav.search} className="max-h-[85vh] overflow-y-auto bg-paper" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:py-10">
               <SearchPanel onClose={close} />
@@ -181,7 +188,7 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
 
       {/* Mobile slide-in menu */}
       <div className={`fixed inset-0 z-50 xl:hidden ${panel === "menu" ? "" : "pointer-events-none"}`} aria-hidden={panel !== "menu"}>
-        <div className={`absolute inset-0 bg-ink/40 transition-opacity ${panel === "menu" ? "opacity-100" : "opacity-0"}`} onClick={close} />
+        <div className={`absolute inset-0 bg-black/50 transition-opacity ${panel === "menu" ? "opacity-100" : "opacity-0"}`} onClick={close} />
         <nav
           id="mobile-menu"
           aria-label="Mobile"
@@ -211,10 +218,9 @@ export function HeaderClient({ storeName, tagline, navLinks, allCategories, coll
               ))}
             </ul>
           </div>
-          <div className="grid grid-cols-3 border-t border-line text-center text-xs">
+          <div className="grid grid-cols-2 divide-x divide-line border-t border-line text-center text-xs">
             <Link href="/account" onClick={close} className="flex min-h-14 flex-col items-center justify-center gap-1"><UserIcon size={18} />{t.nav.account}</Link>
-            <Link href="/account/wishlist" onClick={close} className="flex min-h-14 flex-col items-center justify-center gap-1 border-x border-line"><HeartIcon size={18} />{t.nav.wishlist}</Link>
-            <LanguageToggle className="min-h-14" />
+            <ThemeToggle withLabel className="flex min-h-14 flex-col items-center justify-center gap-1 [&_svg]:h-[18px] [&_svg]:w-[18px]" />
           </div>
         </nav>
       </div>

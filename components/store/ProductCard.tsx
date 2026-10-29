@@ -4,7 +4,6 @@ import type { Dict } from "@/lib/i18n";
 import type { ProductCardDTO } from "@/lib/types";
 import { imageSrc, isPlaceholder } from "@/lib/images";
 import { Price } from "@/components/ui/Price";
-import { WishlistButton } from "./WishlistButton";
 
 export function ProductCard({ product, t, priority = false, sizes = "(min-width: 1024px) 20vw, (min-width: 768px) 33vw, 50vw" }: { product: ProductCardDTO; t: Dict; priority?: boolean; sizes?: string }) {
   const onSale = product.salePrice != null && product.salePrice < product.price;
@@ -19,10 +18,9 @@ export function ProductCard({ product, t, priority = false, sizes = "(min-width:
           )}
         </Link>
         <div className="pointer-events-none absolute top-2.5 left-2.5 flex flex-col gap-1">
-          {onSale && <span className="rounded bg-sale px-2 py-0.5 text-[10px] tracking-[0.14em] text-white uppercase">{t.product.sale}</span>}
-          {!product.inStock && <span className="rounded bg-ink/80 px-2 py-0.5 text-[10px] tracking-[0.14em] text-white uppercase">{t.product.soldOut}</span>}
+          {onSale && <span className="rounded bg-sale px-2 py-0.5 text-[10px] tracking-[0.14em] text-paper uppercase">{t.product.sale}</span>}
+          {!product.inStock && <span className="rounded bg-ink/80 px-2 py-0.5 text-[10px] tracking-[0.14em] text-paper uppercase">{t.product.soldOut}</span>}
         </div>
-        <WishlistButton productId={product.id} label={t.product.addToWishlist} className="absolute top-1.5 right-1.5" />
       </div>
       <div className="mt-3 flex flex-col gap-0.5">
         <h3 className="text-sm leading-snug">

@@ -30,7 +30,7 @@ export default async function SizeGuidePage() {
                   <thead className="bg-sand">
                     <tr>{tbl.head.map((h) => <th key={h} scope="col" className="px-4 py-3 font-medium">{h}</th>)}</tr>
                   </thead>
-                  <tbody className="divide-y divide-line bg-white/50">
+                  <tbody className="divide-y divide-line bg-surface/50">
                     {tbl.rows.map((r) => (
                       <tr key={r[0]}>{r.map((c, i) => (i === 0 ? <th key={i} scope="row" className="px-4 py-2.5 font-medium">{c}</th> : <td key={i} className="px-4 py-2.5">{c}</td>))}</tr>
                     ))}

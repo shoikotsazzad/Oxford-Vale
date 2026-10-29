@@ -10,7 +10,7 @@ type Props = {
   onSkip: () => Promise<void>;
 };
 
-const input = "mt-1.5 block min-h-12 w-full rounded-md border bg-white px-3 text-base outline-none focus:border-ink";
+const input = "mt-1.5 block min-h-12 w-full rounded-md border bg-surface px-3 text-base outline-none focus:border-ink";
 
 /** Shown on the first add-to-cart. Skipping still keeps the item in the bag; details are then asked at checkout. */
 export function LeadCaptureModal({ onSubmit, onSkip }: Props) {
@@ -35,7 +35,7 @@ export function LeadCaptureModal({ onSubmit, onSkip }: Props) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-ink/50" onClick={() => start(onSkip)} />
+      <div className="absolute inset-0 bg-black/50" onClick={() => start(onSkip)} />
       <div role="dialog" aria-modal="true" aria-labelledby="lead-title" className="relative w-full max-w-md rounded-t-2xl bg-paper p-6 shadow-xl sm:rounded-2xl sm:p-8">
         <button type="button" onClick={() => start(onSkip)} aria-label={t.nav.close} className="absolute top-3 right-3 flex h-11 w-11 items-center justify-center"><CloseIcon /></button>
         <p className="label text-muted">{t.cart.added}</p>

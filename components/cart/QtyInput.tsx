@@ -6,7 +6,7 @@ export function QtyInput({ value, max, onChange, disabled, size = "md" }: { valu
   const { t } = useI18n();
   const h = size === "sm" ? "h-9 w-9" : "h-12 w-11";
   return (
-    <div className={`inline-flex items-center rounded-md border border-line bg-white/60 ${disabled ? "opacity-60" : ""}`} role="group" aria-label={t.product.quantity}>
+    <div className={`inline-flex items-center rounded-md border border-line bg-surface/60 ${disabled ? "opacity-60" : ""}`} role="group" aria-label={t.product.quantity}>
       <button type="button" onClick={() => onChange(value - 1)} disabled={disabled || value <= 1} aria-label={t.product.decrease} className={`flex ${h} items-center justify-center disabled:opacity-30`}>
         <MinusIcon size={14} />
       </button>

@@ -1,5 +1,6 @@
 import "server-only";
-import { OrderModel, isAwaitingVerification, type OrderStatus, type PaymentMethod, type PaymentStatus } from "@/models";
+import { OrderModel, type OrderStatus, type PaymentMethod, type PaymentStatus } from "@/models";
+import type { PostalAddress } from "@/lib/address";
 
 export type OrderViewDTO = {
   orderNo: string;
@@ -7,10 +8,10 @@ export type OrderViewDTO = {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
-  awaitingVerification: boolean;
-  trxId: string | null;
+  /** How it was paid, e.g. "card (visa)", "PayPal", "klarna". */
+  paidWith: string | null;
   customer: { name: string; phone: string; email: string };
-  address: { name: string; phone: string; division: string; district: string; upazila: string; addressLine: string };
+  address: PostalAddress & { name: string; phone: string };
   items: { sku: string; name: string; size: string; colour: string; image: string; unitPrice: number; regularPrice: number; qty: number; lineTotal: number }[];
   subtotal: number;
   discount: number;
@@ -32,10 +33,12 @@ export async function getOrderView(orderNo: string): Promise<OrderViewDTO | null
     status: o.status,
     paymentStatus: o.paymentStatus,
     paymentMethod: o.paymentMethod,
-    awaitingVerification: isAwaitingVerification(o),
-    trxId: o.payment?.trxId ?? null,
+    paidWith: o.paymentStatus === "paid" ? (o.payment?.brand ?? null) : null,
     customer: { name: o.customer!.name, phone: o.customer!.phone, email: o.customer!.email ?? "" },
-    address: { ...o.shippingAddress! },
+    address: {
+      name: o.shippingAddress!.name, phone: o.shippingAddress!.phone, line1: o.shippingAddress!.line1, line2: o.shippingAddress!.line2 ?? "",
+      city: o.shippingAddress!.city, county: o.shippingAddress!.county ?? "", postcode: o.shippingAddress!.postcode ?? "", country: o.shippingAddress!.country,
+    },
     items: o.items.map((i) => ({ sku: i.sku, name: i.name, size: i.size ?? "", colour: i.colour ?? "", image: i.image ?? "", unitPrice: i.unitPrice, regularPrice: i.regularPrice, qty: i.qty, lineTotal: i.lineTotal })),
     subtotal: o.subtotal,
     discount: o.discount ?? 0,

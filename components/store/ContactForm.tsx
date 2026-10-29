@@ -4,7 +4,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/Button";
 import { sendContactMessage } from "@/server/actions/contact";
 
-const input = "mt-1.5 block min-h-12 w-full rounded-md border bg-white px-3 text-base outline-none focus:border-ink";
+const input = "mt-1.5 block min-h-12 w-full rounded-md border bg-surface px-3 text-base outline-none focus:border-ink";
 
 export function ContactForm() {
   const { t } = useI18n();

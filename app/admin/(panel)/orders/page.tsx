@@ -2,15 +2,15 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { requireAdminPage } from "@/server/admin/guard";
 import { orderFilter, pickOrderParams } from "@/server/services/admin-orders";
-import { OrderModel, ORDER_STATUSES, isAwaitingVerification } from "@/models";
-import { formatBDT } from "@/lib/money";
+import { OrderModel, ORDER_STATUSES } from "@/models";
+import { formatMoney } from "@/lib/money";
 import {
   AdminPagination, dateTime, EmptyRow, Filter, FilterBar, filterInput, label, listHref, OrderStatusBadge, PageHeader, pageOf, PaymentBadge, Table, TableSkeleton, td, th,
 } from "@/components/admin/ui";
 
 export const metadata = { title: "Orders" };
 const PER_PAGE = 25;
-const METHOD: Record<string, string> = { cod: "COD", sslcommerz: "Card / online", bkash: "bKash", nagad: "Nagad" };
+const METHOD: Record<string, string> = { stripe: "Stripe", paypal: "PayPal" };
 
 export default function OrdersPage(props: PageProps<"/admin/orders">) {
   return (
@@ -37,7 +37,7 @@ async function Orders({ searchParams }: PageProps<"/admin/orders">) {
 
   return (
     <>
-      <PageHeader title="Orders" actions={<a href={exportHref} className="label inline-flex h-10 items-center rounded-md border border-ink px-4 hover:bg-ink hover:text-white">Export CSV</a>} />
+      <PageHeader title="Orders" actions={<a href={exportHref} className="label inline-flex h-10 items-center rounded-md border border-ink px-4 hover:bg-ink hover:text-paper">Export CSV</a>} />
       <FilterBar action="/admin/orders">
         <Filter label="Search">
           <input name="q" defaultValue={params.q} placeholder="Order no, name, phone, Trx ID" className={`${filterInput} w-64`} />
@@ -52,7 +52,7 @@ async function Orders({ searchParams }: PageProps<"/admin/orders">) {
         <Filter label="Payment">
           <select name="payment" defaultValue={params.payment ?? ""} className={filterInput}>
             <option value="">All</option>
-            <option value="verify">Needs verification</option>
+            <option value="awaiting">Awaiting payment</option>
             <option value="unpaid">Unpaid</option>
             <option value="paid">Paid</option>
             <option value="failed">Failed</option>
@@ -97,11 +97,11 @@ async function Orders({ searchParams }: PageProps<"/admin/orders">) {
                   <p className="text-xs text-muted">{o.customer?.phone} · {o.delivery?.name}</p>
                 </td>
                 <td className={`${td} tabular-nums`}>{o.items.reduce((n, i) => n + i.qty, 0)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatBDT(o.total)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMoney(o.total)}</td>
                 <td className={td}>
                   <div className="flex flex-col items-start gap-1">
                     <span className="text-xs text-muted">{METHOD[o.paymentMethod]}</span>
-                    <PaymentBadge status={o.paymentStatus} awaiting={isAwaitingVerification(o)} />
+                    <PaymentBadge status={o.paymentStatus} />
                   </div>
                 </td>
                 <td className={td}><OrderStatusBadge status={o.status} /></td>

@@ -41,10 +41,13 @@ export async function addToCart(input: unknown): Promise<Result<CartView>> {
     const { token, cart } = await addItem(current, parsed.data.variantId, parsed.data.qty);
     if (token !== current) await setCartToken(token);
     // Signed-in shoppers: link the bag and record the lead from their profile (no modal needed).
+    // Accounts without a phone (e.g. staff) get the lead at checkout instead; a lead problem never blocks the bag.
     const user = await getCurrentUser();
     if (user && !cart.lead) {
       await CartModel.updateOne({ _id: cart._id }, { user: user.id });
-      await upsertLead({ ...cart, user: user.id as unknown as typeof cart.user }, { name: user.name, phone: user.phone, email: user.email }, "add_to_cart");
+      if (user.phone) {
+        await upsertLead({ ...cart, user: user.id as unknown as typeof cart.user }, { name: user.name, phone: user.phone, email: user.email }, "add_to_cart").catch((err) => console.error("lead from profile failed", err));
+      }
     }
     return ok(await view(token));
   } catch (err) {

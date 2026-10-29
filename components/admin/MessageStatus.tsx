@@ -11,7 +11,7 @@ export function MessageStatus({ id, status }: { id: string; status: string }) {
         defaultValue={status}
         disabled={pending}
         onChange={(e) => run(() => setMessageStatus({ id, status: e.target.value }))}
-        className="h-10 rounded-md border border-line bg-white px-2 text-sm outline-none focus:border-ink"
+        className="h-10 rounded-md border border-line bg-surface px-2 text-sm outline-none focus:border-ink"
       >
         <option value="new">New</option>
         <option value="read">Read</option>

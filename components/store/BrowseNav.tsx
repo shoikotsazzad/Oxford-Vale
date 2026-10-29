@@ -18,7 +18,7 @@ export async function BrowseNav({ kind, pathname, t }: { kind: "categories" | "c
               <Link
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-10 items-center rounded-full border px-4 text-sm whitespace-nowrap transition-colors ${active ? "border-ink bg-ink text-white" : "border-line bg-white/60 text-ink/80 hover:border-ink hover:text-ink"}`}
+                className={`flex min-h-10 items-center rounded-full border px-4 text-sm whitespace-nowrap transition-colors ${active ? "border-ink bg-ink text-paper" : "border-line bg-surface/60 text-ink/80 hover:border-ink hover:text-ink"}`}
               >
                 {l.name}
               </Link>

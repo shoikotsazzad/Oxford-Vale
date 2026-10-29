@@ -21,7 +21,7 @@ async function Messages({ searchParams }: PageProps<"/admin/messages">) {
   const sp = await searchParams;
   const tab = sp.tab === "outbox" ? "outbox" : "inbox";
   const rawPage = typeof sp.page === "string" ? sp.page : undefined;
-  const tabCls = (active: boolean) => `label inline-flex h-10 items-center rounded-md px-4 ${active ? "bg-ink text-white" : "border border-line bg-white hover:border-ink"}`;
+  const tabCls = (active: boolean) => `label inline-flex h-10 items-center rounded-md px-4 ${active ? "bg-ink text-paper" : "border border-line bg-surface hover:border-ink"}`;
 
   return (
     <>

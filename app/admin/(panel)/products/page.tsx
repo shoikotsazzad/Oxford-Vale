@@ -4,7 +4,7 @@ import { requireAdminPage } from "@/server/admin/guard";
 import { can } from "@/server/auth/rbac";
 import { getSettings } from "@/server/services/settings";
 import { CategoryModel, ProductModel, VariantModel } from "@/models";
-import { formatBDT } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { Thumb } from "@/components/admin/Thumb";
 import {
   AdminPagination, Badge, EmptyRow, escapeRegex, Filter, FilterBar, filterInput, listHref, PageHeader, pageOf, Table, TableSkeleton, td, th,
@@ -58,7 +58,7 @@ async function Products({ searchParams }: PageProps<"/admin/products">) {
       <PageHeader
         title="Products"
         text={`${total} product${total === 1 ? "" : "s"}${filter.status && typeof filter.status === "object" ? " (archived hidden)" : ""}`}
-        actions={can(admin.role, "catalog.edit") && <Link href="/admin/products/new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-white hover:bg-charcoal">Add product</Link>}
+        actions={can(admin.role, "catalog.edit") && <Link href="/admin/products/new" className="label inline-flex h-10 items-center rounded-md bg-ink px-4 text-paper hover:bg-charcoal">Add product</Link>}
       />
       <FilterBar action="/admin/products">
         <Filter label="Search">
@@ -114,7 +114,7 @@ async function Products({ searchParams }: PageProps<"/admin/products">) {
                   </td>
                   <td className={td}>{catName.get(String(p.category)) ?? "—"}</td>
                   <td className={`${td} text-right tabular-nums`}>
-                    {p.salePrice ? <>{formatBDT(p.salePrice)} <span className="block text-xs text-muted line-through">{formatBDT(p.price)}</span></> : formatBDT(p.price)}
+                    {p.salePrice ? <>{formatMoney(p.salePrice)} <span className="block text-xs text-muted line-through">{formatMoney(p.price)}</span></> : formatMoney(p.price)}
                   </td>
                   <td className={`${td} text-right tabular-nums`}>
                     {s?.total ?? 0}
