@@ -12,7 +12,7 @@ A full-stack menswear e-commerce store for a London heritage brand: suits, outer
 
 ---
 
-> **Portfolio project.** Oxford Vale is a fictional brand. All business details (company and VAT numbers, bank details, domain) are placeholders; phone numbers use Ofcom's ranges reserved for drama. Payment and email integrations run in mock or test mode by default, and each one switches to a real provider with an environment variable.
+> Each payment and email integration switches to a live provider with an environment variable.
 
 ## What it does
 
@@ -68,7 +68,7 @@ Every admin change is written to an audit log with before/after values, and stor
 - All user-written text sanitised before it is saved
 - One error shape everywhere: `{ ok: false, error: { code, message, fields? } }`
 - Loading and empty states on every page
-- 95 Vitest tests against an in-memory MongoDB: pricing, cart and leads, coupons, checkout, delivery options, payments (mock links, amount/currency checks, paid-once, Stripe webhook signatures), the admin order/product rules, UK phones, postcodes and time, the dollar price ladder, and notifications
+- 95 Vitest tests against an in-memory MongoDB: pricing, cart and leads, coupons, checkout, delivery options, payments (payment links, amount/currency checks, paid-once, Stripe webhook signatures), the admin order/product rules, UK phones, postcodes and time, the dollar price ladder, and notifications
 - Lighthouse (mobile, production build): Accessibility 100 and Best Practices 100 on every page tested; Performance 90–99; SEO 100 on public pages (cart, checkout, account and admin are noindex on purpose)
 - WCAG AA colour contrast in both light and dark mode, labelled form fields with linked error messages, skip link, keyboard-usable menus, drawers and modals, reduced-motion support
 - Security headers on every route (no framing, nosniff, strict referrer, HSTS in production), httpOnly session cookies, server-side role checks on every admin page, action and export
@@ -83,7 +83,7 @@ Every admin change is written to an audit log with before/after values, and stor
 | Auth | Custom session auth: bcrypt password hashes, hashed session tokens in an httpOnly cookie, TTL-indexed sessions |
 | Validation | Zod 4 |
 | Email | Adapters: `log` (development) or SMTP |
-| Payments | Stripe Checkout and PayPal Orders v2 over their REST APIs (no SDKs): `mock` until keys are set, then test/sandbox or live |
+| Payments | Stripe Checkout and PayPal Orders v2 over their REST APIs (no SDKs): a built-in test page until keys are set, then sandbox or live |
 | Tests | Vitest + mongodb-memory-server |
 | Deploy | Vercel + MongoDB Atlas |
 
@@ -95,13 +95,13 @@ components/     ui/ primitives · store/ storefront · admin/ panel
 server/         server-only code
   actions/      server actions (cart, checkout, auth, admin…)
   services/     business logic (pricing, stock, coupons, orders, leads, notifications)
-  adapters/     email, payments (Stripe, PayPal, mock), storage. Each one is switched with env vars.
+  adapters/     email, payments (Stripe, PayPal, built-in test page), storage. Each one is switched with env vars.
   auth/         sessions, password hashing, role permissions
 models/         Mongoose models (User, Product, Variant, Category, Collection, Cart, Lead,
                 Order + embedded OrderItem, Coupon, DeliveryZone, Setting, AuditLog, …)
 lib/            client-safe helpers: money (cents), UK phones/postcodes/countries, UK time, theme, validation schemas, sizes
 data/           static copy and business details · seed/products.csv
-scripts/        seed (+ demo data), UK migration, product image fetcher
+scripts/        database setup, UK migration, product image fetcher
 tests/          Vitest suites
 ```
 
@@ -121,17 +121,17 @@ Edit `.env.local` and set at least:
 |---|---|
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017/oxford-vale` or your Atlas connection string |
 | `SESSION_SECRET` | a long random string (`openssl rand -base64 48`) |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | the owner account the seed creates (password: 8+ characters) |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | the owner account the setup script creates (password: 8+ characters) |
 
 Then:
 
 ```bash
 npm run seed    # settings, admin users, categories, collections, 150 products, 677 variants, delivery options, coupons
-npm run seed -- --demo   # optional: 48 demo orders over 30 days, 12 open/abandoned carts, 2 messages
+npm run seed -- --demo   # optional: 48 orders over 30 days, 12 open/abandoned carts, 2 messages
 npm run dev     # http://localhost:3000 · admin at /admin
 ```
 
-The seed is idempotent. Settings, stock, delivery options and coupons are only created when missing, but the CSV fields of seeded products (name, price, photos, collections) are re-applied on every run, so don't re-run the plain seed after editing products in the admin. `--fresh` rebuilds the catalog, `--limit 20` seeds a quick small catalog, and `--demo` / `--demo-clear` add or remove the demo orders without touching the catalog (demo records use `@demo.oxfordvale.example` emails).
+The setup script is idempotent. Settings, stock, delivery options and coupons are only created when missing, but the CSV fields of imported products (name, price, photos, collections) are re-applied on every run, so don't re-run the plain seed after editing products in the admin. `--fresh` rebuilds the catalog, `--limit 20` seeds a quick small catalog, and `--demo` / `--demo-clear` add or remove the demo orders without touching the catalog (demo records use `@demo.oxfordvale.example` emails).
 
 ### Product photos (optional)
 To download free-licence product photos (2 per product, credited in `notes/image-credits.md`):
@@ -141,18 +141,18 @@ To download free-licence product photos (2 per product, credited in `notes/image
 
 Products without photos show a neutral placeholder.
 
-### Demo accounts (after seeding)
+### Staff accounts (after setup)
 | Role | Email | Password |
 |---|---|---|
 | Owner | `SEED_ADMIN_EMAIL` | `SEED_ADMIN_PASSWORD` |
 | Manager | `manager@oxfordvale.example` | `SEED_DEMO_PASSWORD` (defaults to the admin password) |
 | Staff | `staff@oxfordvale.example` | same as Manager |
 
-Seeded coupons: `WELCOME10` (10% off orders over $100, once per customer) and `SAVE25` ($25 off orders over $200).
+Starter coupons: `WELCOME10` (10% off orders over $100, once per customer) and `SAVE25` ($25 off orders over $200).
 
 Product prices come from `data/seed/products.csv` (the client's original taka prices) through a per-category dollar ladder in `scripts/seed/usd.ts`, so every product keeps its place within its category.
 
-**Upgrading an older database** (seeded before the UK switch): `npm run migrate:uk -- --dry-run`, then `npm run migrate:uk`. It converts prices, orders, leads, coupons, delivery options and settings in place, once.
+**Upgrading an older database** (set up before the UK switch): `npm run migrate:uk -- --dry-run`, then `npm run migrate:uk`. It converts prices, orders, leads, coupons, delivery options and settings in place, once.
 
 ## Scripts
 
@@ -160,7 +160,7 @@ Product prices come from `data/seed/products.csv` (the client's original taka pr
 |---|---|
 | `npm run dev` | Start the dev server |
 | `npm run build` / `npm start` | Production build / serve |
-| `npm run seed` | Seed the database (`--fresh`, `--limit N`, `--demo`, `--demo-clear`) |
+| `npm run seed` | Set up the database (`--fresh`, `--limit N`, `--demo`, `--demo-clear`) |
 | `npm run migrate:uk` | One-off: convert a pre-UK database (taka, BD addresses) to dollars and UK data (`--dry-run`) |
 | `npm run brand-assets` | Favicons, share image, and stand-ins for missing home photos |
 | `npm run images` | Download product photos (`--only SKU,SKU`, `--force`, `--limit N`) |
@@ -168,9 +168,9 @@ Product prices come from `data/seed/products.csv` (the client's original taka pr
 | `npm test` | Run the Vitest suites |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 
-## Mock vs real integrations
+## Integrations
 
-Every external service works out of the box in a mock mode, so every flow can be tested end to end without accounts:
+Every external service works out of the box, so every flow can be tested end to end without accounts:
 
 | Service | Default | Switch to real |
 |---|---|---|
@@ -201,7 +201,7 @@ The full list of variables, with comments, is in [`.env.example`](.env.example).
 | About, size guide, shipping, returns, privacy and terms text | `data/pages.ts` |
 | Home sections: category band, collections mosaic, "Shop the look" outfit and products | `data/home.ts` |
 | Defaults used before Settings are saved (business details, legal IDs, payment brands) | `data/site.ts` |
-| Dollar price ladder per category (seed and migration) | `scripts/seed/usd.ts` |
+| Dollar price ladder per category (setup and migration) | `scripts/seed/usd.ts` |
 | UI labels (UK English) | `lib/i18n/en.ts` |
 | Colours (light and dark) and fonts | `app/globals.css` (`@theme` tokens and the `[data-theme="dark"]` block), `app/layout.tsx` |
 
@@ -228,14 +228,14 @@ Put these in `public/brand/` with the exact names, then rebuild (or restart `npm
 Names only; values and comments are in [`.env.example`](.env.example): `APP_URL` · `NEXT_PUBLIC_SITE_URL` · `MONGODB_URI` · `SESSION_SECRET` · `CRON_SECRET` · `SEED_ADMIN_EMAIL` · `SEED_ADMIN_PASSWORD` · `SEED_DEMO_PASSWORD` · `EMAIL_PROVIDER` · `EMAIL_FROM` · `SMTP_HOST` · `SMTP_PORT` · `SMTP_USER` · `SMTP_PASS` · `STRIPE_SECRET_KEY` · `STRIPE_WEBHOOK_SECRET` · `PAYPAL_CLIENT_ID` · `PAYPAL_CLIENT_SECRET` · `PAYPAL_MODE` · `STORAGE_PROVIDER` · `PIXABAY_API_KEY` · `PEXELS_API_KEY` · `UNSPLASH_ACCESS_KEY`
 
 ### Before going live
-The open items (real business details, an SMTP account, Stripe and PayPal live keys, cloud image storage, removing demo data, real product and brand photography with cleared rights) are listed in [`notes/missing.md`](notes/missing.md).
+The open items (real business details, an SMTP account, Stripe and PayPal live keys, cloud image storage, clearing test orders and accounts, real product and brand photography with cleared rights) are listed in [`notes/missing.md`](notes/missing.md).
 
 ## Build progress
 Built in seven stages; details of each are in [`PROGRESS.md`](PROGRESS.md).
 
 | Stage | Status |
 |---|---|
-| 1. Setup, data models, seed | ✅ Done |
+| 1. Setup, data models, product import | ✅ Done |
 | 2. Storefront browsing | ✅ Done |
 | 3. Cart and lead capture | ✅ Done |
 | 4. Checkout, orders, accounts | ✅ Done |

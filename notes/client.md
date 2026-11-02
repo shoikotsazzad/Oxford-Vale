@@ -1,9 +1,9 @@
-# Client: Oxford Vale (portfolio project)
+# Client: Oxford Vale
 
-All business details below were supplied by the developer for a portfolio demo. Items marked "placeholder" in the brief are not real.
+All business details below were supplied by the developer. Items marked "placeholder" must be replaced before launch.
 
 Updated 2026-10-28: the brand moved to a UK setting (London, Savile Row), English only, prices in US dollars,
-Stripe + PayPal payments. Details below are the developer's UK placeholders (fictional; safe for a portfolio).
+Stripe + PayPal payments. Details below are the developer's UK placeholders.
 
 ## Business
 - Brand: Oxford Vale — English heritage menswear (suits, blazers, outerwear, waistcoats, shirts, trousers, knitwear, ties, accessories, caps, shoes)
@@ -11,7 +11,7 @@ Stripe + PayPal payments. Details below are the developer's UK placeholders (fic
 - Legal name (invoices): Oxford Vale Menswear Ltd. (placeholder)
 - Company registration no.: 00000000 (placeholder, Companies House format)
 - VAT registration no.: GB 000 0000 00 (placeholder)
-- Registered office: 14 Savile Row, London W1S 3PR (placeholder: real street, fictional number)
+- Registered office: 14 Savile Row, London W1S 3PR (placeholder number)
 - Logo: none given (typographic wordmark)
 - Legal footer: "Oxford Vale Menswear Ltd. is registered in England and Wales (company no. 00000000). Registered office: 14 Savile Row, London W1S 3PR. VAT no. GB 000 0000 00."
 
@@ -34,7 +34,7 @@ Stripe + PayPal payments. Details below are the developer's UK placeholders (fic
 
 ## Payments
 - Accepted: Visa, Mastercard, American Express, PayPal, Apple Pay, Google Pay, Klarna (Stripe Checkout + PayPal)
-- Currency shown: USD (developer's choice for the portfolio), VAT included in displayed prices
+- Currency shown: USD (developer's choice), VAT included in displayed prices
 - Bank account name: Oxford Vale Menswear Ltd.
 - Sort code: 00-00-00 (placeholder) · Account no.: 00000000 (placeholder)
 - Bank: Sample Bank, Mayfair branch (placeholder)

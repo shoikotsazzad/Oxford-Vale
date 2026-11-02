@@ -1,7 +1,7 @@
-// Business details (fictional UK brand for a portfolio; registration numbers and bank details are placeholders).
+// Business details (registration numbers and bank details are placeholders).
 // The seed copies these into the Setting document, which the admin can then edit.
 // The storefront reads the Setting document; these values are the fallback when the database is empty.
-// Source: notes/client.md. Items marked "placeholder" there are not real.
+// Source: notes/client.md. Items marked "placeholder" there must be replaced before launch.
 
 export const site = {
   name: "Oxford Vale",
@@ -14,7 +14,7 @@ export const site = {
   locale: "en_GB",
   ogImage: "/brand/og-image.jpg",
 
-  // Fictional numbers: 020 7946 xxxx is reserved by Ofcom for drama, so it can never reach a real person.
+  // Placeholder numbers: 020 7946 xxxx is an Ofcom reserved range, so it can never reach a real person.
   phone: "02079460001",
   phoneDisplay: "020 7946 0001",
   freephone: "08000000001",
@@ -27,7 +27,7 @@ export const site = {
     name: "Oxford Vale Menswear Ltd.", // placeholder
     companyNo: "00000000", // placeholder (Companies House, 8 digits)
     vatNo: "GB 000 0000 00", // placeholder
-    registeredOffice: "14 Savile Row, London W1S 3PR", // placeholder number on a real street
+    registeredOffice: "14 Savile Row, London W1S 3PR", // placeholder number
   },
 
   // Showroom, head office and dispatch.
