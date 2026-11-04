@@ -8,7 +8,6 @@ export const en = {
     shopTheLook: "Shop the look", lookTotal: "Complete look", prev: "Previous", next: "Next",
     greeting: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" }, welcome: "Welcome to Oxford Vale", categoriesShort: "Categories",
     offerUse: "Use code", offerCopied: "Copied", offerOff: "off", offerCopy: "Copy code",
-    helpEyebrow: "Fit and sizing", helpTitle: "Not sure of your size?", helpText: "Call our Savile Row team or email us your height, chest and usual size, and we'll help you choose the right fit before you order.", helpCall: "Call", helpEmail: "Email us", sizeGuide: "Size guide",
     ticker: ["Tailored suits", "Wool overcoats", "Tweed caps", "Oxford shirts", "Leather shoes", "Free UK returns", "Worldwide delivery"],
     features: [
       { title: "Free UK delivery", text: "On orders over {amount}" },

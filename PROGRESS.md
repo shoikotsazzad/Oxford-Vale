@@ -199,3 +199,9 @@ Build order (notes/plan.md §8): 1 setup + seed → 2 storefront browsing → 3 
 - Footer below lg: centred, essentials only (phone/email, key links, payment badges, socials, legal line). Desktop footer unchanged.
 - Wishlist removed everywhere (product cards, header, tab bar, account page and nav, provider, server action, User.wishlist field). Existing wishlist data in MongoDB is simply ignored.
 - Account pages: loading.tsx per segment fixes Next 16 "uncached data … outside <Suspense>" navigation errors.
+
+## Change request 2026-11-04: Vercel deployment, home section removed
+- Next.js upgraded to 16.4.4. Deployed to https://oxford-vale.vercel.app with MongoDB Atlas (database `oxford-vale`, seeded with the catalog and demo data). The Atlas user has `readWrite` on that database only.
+- `next build` reads MongoDB, so `MONGODB_URI` must be set in Vercel before the build runs.
+- Removed the "Not sure of your size?" section from the home page (`StyleHelp` component and its strings). The size guide stays in the footer and on product pages.
+- Mocked / pending: payments use the test page until Stripe/PayPal keys are added, emails stay in log mode, admin photo uploads need cloud storage on Vercel.

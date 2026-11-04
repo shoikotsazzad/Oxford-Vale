@@ -53,4 +53,4 @@ Stand-ins are in place for the home page (2026-10-23); replace with real brand p
 ## UK switch (2026-10-28)
 - [x] Existing database converted in place (`npm run migrate:uk`); backup before the change: `storage/backups/oxford-vale-before-uk-2026-10-28.archive` (restore: `mongorestore --gzip --archive=… --drop`)
 - [ ] The one pre-switch test order (OV-261028-0001) keeps its Bangladesh address (country BD) and is now an unpaid Stripe order; cancel it from admin if not needed
-- [ ] Upgrade Next.js 16.4.0 → 16.4.3 (critical security advisories; the build stops with a SecurityFatalError notice until then)
+- [x] Upgraded Next.js to 16.4.4 (critical security advisories; the build stopped with a SecurityFatalError notice on 16.4.0)

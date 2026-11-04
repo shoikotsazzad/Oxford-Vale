@@ -16,7 +16,6 @@ import { CollectionMosaic } from "@/components/store/CollectionMosaic";
 import { FeatureBar } from "@/components/store/FeatureBar";
 import { ProductRow } from "@/components/store/ProductRow";
 import { ShopTheLook } from "@/components/store/ShopTheLook";
-import { StyleHelp } from "@/components/store/StyleHelp";
 
 export const metadata = buildMetadata({
   description: "English heritage menswear from Savile Row, London: tailored suits, overcoats, tweed caps, shirts and leather shoes. Free UK delivery over $125, free 30-day UK returns, worldwide shipping.",
@@ -59,7 +58,6 @@ export default async function HomePage() {
       <ProductRow title={t.home.bestOf} href={`/collections/${bestOfCollection}`} products={bestOf} t={t} />
       <ShopTheLook look={shopTheLook} products={look} t={t} />
       <ProductRow title={t.home.onSale} products={onSale} t={t} layout="list" />
-      <StyleHelp phone={settings.contact.phone} email={settings.contact.email} t={t} />
     </>
   );
 }
